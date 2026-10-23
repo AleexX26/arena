@@ -2,9 +2,9 @@
 
 Web personal de ayuda para **Arena Breakout: Infinite**, en español, de una sola página (`index.html`, sin dependencias, funciona sin conexión).
 
-1. **Calculadora de la furgoneta**: eliges mapa y modo, y ves qué carga del Comerciante de campo compensa comprar (valor esperado, probabilidad de ganar), más la lista de lo que vendes.
-2. **Identificar por sonido**: los 38 sonidos del juego para escucharlos; al elegir uno ves qué objetos pueden ser y con qué probabilidad en la carga comprada.
-3. Tabla de los 189 objetos con filtros, caja secreta de la Estación de TV, analizador por micrófono (experimental) y raid.
+1. **Calculadora de la furgoneta** (al estilo de ABI Builder): filtros a la izquierda, los 38 sonidos con miniaturas y los candidatos con su probabilidad según mapa y carga.
+2. **¿Qué carga comprar?**: valor esperado y probabilidad de ganar de cada carga en tu mapa.
+3. Vender a la furgoneta: lista de lo que llevas, % de venta y orden recomendado.
 
 ## Datos
 

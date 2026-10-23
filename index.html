@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi ayuda de Arena Breakout</title>
-<meta name="description" content="Ayuda personal para Arena Breakout: Infinite: identifica por el sonido lo que te da la furgoneta, probabilidades reales de cada carga por mapa, caja secreta de la Estación de TV y raids. Proyecto de fans no oficial.">
+<meta name="description" content="Calculadora de la furgoneta de Arena Breakout: Infinite: identifica por el sonido lo que te da el Comerciante de campo, con probabilidades por mapa y carga.">
 <meta name="theme-color" content="#141617">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23212528'/%3E%3Cpath d='M6 22 16 6l10 16H6Z' fill='none' stroke='%23ff7a1a' stroke-width='3'/%3E%3Ccircle cx='16' cy='18' r='2.5' fill='%238fa552'/%3E%3C/svg%3E">
 <style>
@@ -160,8 +160,7 @@ label { display: block; }
    SECCIONES Y TARJETAS (a todo el ancho de la pantalla)
    ========================================================================= */
 main { padding: 8px var(--margen) 48px; }
-.seccion, #vender { padding: 36px 0 8px; scroll-margin-top: calc(var(--alto-cabecera) + 8px); }
-#vender { padding: 0; }
+.seccion { padding: 36px 0 8px; scroll-margin-top: calc(var(--alto-cabecera) + 8px); }
 .sec-cab { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .sec-num { font: 700 .8rem var(--mono); color: var(--sobre-naranja); background: var(--naranja); padding: 3px 7px; border-radius: 3px; letter-spacing: .08em; }
 .sec-cab h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); letter-spacing: .01em; }
@@ -202,56 +201,93 @@ main { padding: 8px var(--margen) 48px; }
 .icono img { max-width: 90%; max-height: 90%; object-fit: contain; }
 
 /* =========================================================================
-   01 · SONIDO
+   01 · CALCULADORA DE LA FURGONETA (filtros a la izquierda, sonidos y candidatos)
    ========================================================================= */
-.escenario { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); align-items: end; }
-.escenario .ancho { grid-column: span 2; }
-@media (max-width: 520px) { .escenario .ancho { grid-column: auto; } }
-.sonido-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); margin-top: 16px; }
-@media (min-width: 1100px) {
-  .sonido-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-  .sonido-layout > .tarjeta:last-child { position: sticky; top: calc(var(--alto-cabecera) + 12px); max-height: calc(100vh - var(--alto-cabecera) - 24px); overflow: auto; }
+.app { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.app-main { display: grid; gap: 16px; min-width: 0; }
+@media (min-width: 1000px) {
+  .app { grid-template-columns: 300px minmax(0, 1fr); }
+  .panel-filtros { position: sticky; top: calc(var(--alto-cabecera) + 12px); max-height: calc(100vh - var(--alto-cabecera) - 24px); overflow: auto; }
 }
-.rejilla-sonidos { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
-.sonido-btn {
-  flex-direction: column; align-items: stretch; gap: 2px; padding: 8px 8px 7px; min-height: 76px; text-align: left;
-  background: var(--fondo-2); font-weight: 600;
+.panel-filtros { padding: 0; }
+.panel-filtros > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 56px; padding: 8px 16px; font-weight: 800; font-size: 1.1rem;
 }
-.sonido-btn .n { display: flex; align-items: center; justify-content: space-between; font: 700 1.25rem/1 var(--mono); }
-.sonido-btn .n::after { content: "▶"; font-size: .7rem; color: var(--texto-2); }
-.sonido-btn .c { font-size: .72rem; color: var(--texto-2); }
-.sonido-btn .v { font: 700 .74rem var(--mono); color: var(--texto-2); }
-.sonido-btn.sin-datos { opacity: .4; }
-.sonido-btn.segura { border-color: var(--verde); }
-.sonido-btn.segura .c { color: var(--verde); }
-.sonido-btn.sonando .n::after { content: "♪"; color: var(--naranja-texto); }
-.sonido-btn[aria-pressed="true"] { background: var(--naranja); border-color: var(--naranja); color: var(--sobre-naranja); opacity: 1; }
-.sonido-btn[aria-pressed="true"] .c, .sonido-btn[aria-pressed="true"] .v, .sonido-btn[aria-pressed="true"] .n::after { color: var(--sobre-naranja); }
-.leyenda { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; color: var(--texto-2); margin: 12px 0 0; }
-.leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 2px solid var(--verde); vertical-align: -1px; margin-right: 4px; }
-.leyenda i.nada { border-color: var(--borde); opacity: .6; }
-.cab-resultado { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
-.cab-resultado h3 { font-size: 1.3rem; font-family: var(--mono); }
-.rango { background: var(--fondo-2); border: 1px solid var(--borde); border-left: 4px solid var(--naranja); border-radius: var(--radio); padding: 12px 14px; margin-bottom: 12px; }
+.panel-filtros > summary::-webkit-details-marker { display: none; }
+.panel-filtros > summary::after { content: "▾"; color: var(--texto-2); transition: transform .2s; }
+.panel-filtros:not([open]) > summary::after { transform: rotate(-90deg); }
+.cuerpo-filtros { display: grid; gap: 16px; padding: 0 16px 16px; }
+.cuerpo-filtros .campo > span { text-transform: none; letter-spacing: 0; font-size: .92rem; color: var(--texto); font-weight: 700; margin-bottom: 6px; }
+.formatos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 8px; }
+.formato-btn { flex-direction: column; gap: 4px; min-height: 64px; padding: 6px 4px; background: transparent; border-color: transparent; font: 600 .7rem var(--mono); color: var(--texto-2); }
+.formato-btn svg { color: var(--texto-2); }
+.formato-btn[aria-pressed="true"] { border-color: var(--naranja); background: var(--superficie-2); color: var(--texto); }
+.formato-btn[aria-pressed="true"] svg { color: var(--naranja); }
+.cab-bloque { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.cab-bloque h3 { font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+.cab-bloque h3 small { font: 400 .9rem var(--mono); color: var(--texto-2); }
+.volumen-pildora { display: flex; align-items: center; gap: 10px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 999px; padding: 0 6px 0 14px; min-height: 44px; }
+.volumen-pildora input[type="range"] { width: 120px; min-height: 40px; }
+.volumen-pildora output { font: 700 .72rem var(--mono); color: var(--sobre-naranja); background: var(--naranja); border-radius: 999px; padding: 3px 8px; }
+.como { padding: 0; }
+.como > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 60px; padding: 8px 18px; font-weight: 800; font-size: 1.1rem; }
+.como > summary::-webkit-details-marker { display: none; }
+.como > summary::after { content: "▾"; color: var(--texto-2); }
+.como[open] > summary::after { transform: rotate(180deg); }
+.como ol { margin: 0; padding: 0 18px 18px 40px; color: var(--texto-2); }
+.como li { margin: 6px 0; }
+
+/* Tarjetas de sonido */
+.sonidos-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); }
+.tarjeta-sonido {
+  position: relative; display: grid; gap: 12px; align-content: start; min-height: 128px;
+  background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px 14px; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.tarjeta-sonido:hover { border-color: var(--verde); }
+.tarjeta-sonido.elegida { border-color: var(--naranja); box-shadow: 0 0 0 1px var(--naranja) inset; background: color-mix(in srgb, var(--naranja) 7%, var(--fondo-2)); }
+.tarjeta-sonido.vacia { opacity: .45; }
+.tarjeta-sonido.segura .ts-id::after { content: "✓ segura"; margin-left: 8px; font: 700 .68rem var(--mono); color: var(--ok); border: 1px solid var(--ok); border-radius: 3px; padding: 1px 5px; }
+.ts-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ts-id { border: 0; background: transparent; padding: 0 6px 0 0; min-width: 0; justify-content: flex-start; font: 700 .9rem var(--mono); color: var(--texto-2); }
+.tarjeta-sonido.elegida .ts-id { color: var(--naranja-texto); }
+.ts-play { padding: 6px 12px; font-size: .85rem; background: var(--superficie); }
+.tarjeta-sonido.sonando .ts-play { border-color: var(--naranja); color: var(--naranja-texto); }
+.ts-objs { display: flex; flex-wrap: wrap; gap: 6px; }
+.miniatura {
+  width: 48px; height: 48px; border-radius: 5px; display: grid; place-items: center; overflow: hidden;
+  background: color-mix(in srgb, var(--rc) 62%, #000); border: 1px solid color-mix(in srgb, var(--rc) 80%, #fff 0%);
+}
+.miniatura img { max-width: 88%; max-height: 88%; object-fit: contain; }
+.mas { width: 48px; height: 48px; border-radius: 5px; display: grid; place-items: center; background: var(--superficie-2); border: 1px solid var(--borde); font: 700 .85rem var(--mono); color: var(--texto-2); }
+.ts-pie { font-size: .78rem; color: var(--texto-2); display: flex; justify-content: space-between; gap: 8px; }
+.ts-pie b { font-family: var(--mono); color: var(--texto); }
+
+/* Candidatos */
+.rango { background: var(--fondo-2); border: 1px solid var(--borde); border-left: 4px solid var(--naranja); border-radius: var(--radio); padding: 12px 14px; margin-bottom: 14px; }
 .rango b { font-family: var(--mono); color: var(--naranja-texto); }
 .rango p { margin: 0 0 4px; }
 .rango p:last-child { margin: 0; }
 .sello-seguro { display: inline-flex; align-items: center; gap: 6px; background: var(--ok-fondo); color: var(--ok); border: 1px solid var(--ok); padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
-.lista-objetos { display: grid; gap: 10px; }
-.objeto { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px; }
+.candidatos-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.objeto { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px; align-content: start; }
 .objeto.top { border-color: var(--naranja); box-shadow: 0 0 0 1px var(--naranja) inset; }
-.objeto .icono { width: 84px; height: 84px; }
-.objeto h4 { margin: 0; font-size: 1.02rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.objeto .original { font-size: .78rem; color: var(--texto-2); margin: 0 0 6px; }
-.objeto .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: .85rem; color: var(--texto-2); align-items: center; }
-.objeto .precios { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 6px 0; font-size: .85rem; color: var(--texto-2); }
-.objeto .precios b { font: 700 1.02rem var(--mono); color: var(--texto); }
+.objeto h4 { margin: 0; font-size: 1rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.objeto .original { font-size: .76rem; color: var(--texto-2); margin: 0 0 6px; }
+.objeto .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: .82rem; color: var(--texto-2); align-items: center; }
+.objeto .precios { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0; font-size: .82rem; color: var(--texto-2); }
+.objeto .precios b { font: 700 1rem var(--mono); color: var(--texto); }
+.objeto .btn-son { min-height: 44px; min-width: 52px; padding: 2px 10px; font-size: .85rem; }
 .prob { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; margin: 6px 0; }
 .prob .barra-p { height: 8px; background: var(--superficie-2); border-radius: 999px; overflow: hidden; }
 .prob .barra-p > div { height: 100%; background: var(--naranja); }
 .prob b { font: 700 .95rem var(--mono); }
 .fuentes { display: flex; flex-wrap: wrap; gap: 4px; }
 .tag-top { font: 700 .68rem var(--mono); text-transform: uppercase; letter-spacing: .06em; background: var(--naranja); color: var(--sobre-naranja); padding: 2px 6px; border-radius: 3px; }
+
+#sonidos, #candidatos, #comprar { scroll-margin-top: calc(var(--alto-cabecera) + 12px); }
+.flotante { position: fixed; right: 16px; bottom: 16px; z-index: 60; box-shadow: 0 8px 24px rgba(0,0,0,.45); border-radius: 999px; padding: 10px 18px; }
 
 /* =========================================================================
    TABLAS
@@ -310,56 +346,7 @@ tr.elegida { box-shadow: inset 4px 0 0 var(--naranja); background: var(--verde-f
 .selector-archivo input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
 .selector-archivo:focus-within .boton { outline: 3px solid var(--naranja); outline-offset: 2px; }
 
-/* =========================================================================
-   CAJA SECRETA
-   ========================================================================= */
-.temporizador { text-align: center; padding: 8px 0; }
-.reloj { font: 800 clamp(4rem, 14vw, 7rem)/1 var(--mono); letter-spacing: -.02em; }
-.reloj.alerta { color: var(--naranja-texto); }
-.reloj.critico { color: var(--rojo); }
-.barra { height: 16px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 999px; overflow: hidden; margin: 14px 0; }
-.barra > div { height: 100%; width: 100%; background: var(--verde); transition: width .1s linear, background .3s; }
-.barra.alerta > div { background: var(--naranja); }
-.barra.critico > div { background: var(--rojo); }
-.marcas-barra { display: flex; justify-content: space-between; font: .72rem var(--mono); color: var(--texto-2); margin-top: -8px; }
-.cajas-tv { display: grid; gap: 10px; }
-.caja-tv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; padding: 10px 12px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); }
-.caja-tv.hecha { border-color: var(--verde); }
-.caja-tv.hecha .titulo-caja { text-decoration: line-through; color: var(--texto-2); }
-.caja-tv input[type="text"] { grid-column: 1 / -1; }
-.planta { font: 700 .72rem var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--verde); margin: 8px 0 2px; }
 
-/* =========================================================================
-   ANALIZADOR
-   ========================================================================= */
-.lienzo { width: 100%; height: 200px; display: block; background: #0d0f10; border: 1px solid var(--borde); border-radius: var(--radio); }
-.medidor { height: 14px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 999px; overflow: hidden; flex: 1; min-width: 120px; }
-.medidor > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--verde) 0 70%, var(--naranja) 70% 90%, var(--rojo) 90%); }
-.coincidencias { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; }
-.coincidencias li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 10px 12px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); }
-.coincidencias li:first-child { border-color: var(--naranja); }
-.coincidencias .pct { font: 700 1.1rem var(--mono); }
-.coincidencias .barrita { grid-column: 1 / -1; height: 6px; background: var(--superficie-2); border-radius: 999px; overflow: hidden; }
-.coincidencias .barrita > div { height: 100%; background: var(--naranja); }
-
-/* =========================================================================
-   RAID
-   ========================================================================= */
-.checklist { list-style: none; padding: 0; margin: 0 0 10px; }
-.checklist li { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--borde); }
-.checklist li .check { flex: 1; padding: 4px 0; }
-.checklist li.hecho .txt { text-decoration: line-through; color: var(--texto-2); }
-.resultado-raid { border-radius: var(--radio); padding: 14px; margin: 12px 0; border: 1px solid var(--borde); text-align: center; }
-.resultado-raid.pos { background: var(--ok-fondo); border-color: var(--ok); color: var(--ok); }
-.resultado-raid.neg { background: var(--rojo-fondo); border-color: var(--rojo); color: var(--rojo); }
-
-/* =========================================================================
-   PIE Y AVISOS
-   ========================================================================= */
-.pie { border-top: 1px solid var(--borde); background: var(--fondo-2); margin-top: 40px; }
-.pie-in { padding: 28px var(--margen) 40px; font-size: .88rem; color: var(--texto-2); }
-.pie-in ul { padding-left: 18px; margin: 8px 0 0; }
-.pie-in li { margin: 4px 0; }
 .tostada {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 90;
   background: var(--texto); color: var(--fondo); padding: 10px 16px; border-radius: var(--radio);
@@ -375,19 +362,17 @@ tr.elegida { box-shadow: inset 4px 0 0 var(--naranja); background: var(--verde-f
   <div class="cabecera-in">
     <a class="marca" href="#furgoneta" aria-label="Mi ayuda de Arena Breakout, ir al inicio">
       <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6" fill="var(--superficie-2)"/><path d="M6 22 16 6l10 16H6Z" fill="none" stroke="var(--naranja)" stroke-width="3"/><circle cx="16" cy="18" r="2.5" fill="var(--verde)"/></svg>
-      <span><h1>Mi ayuda de Arena Breakout</h1><small>ABI · de fans · no oficial</small></span>
+      <span><h1>Mi ayuda de Arena Breakout</h1><small>Calculadora de la furgoneta</small></span>
     </a>
     <button class="boton-menu" id="botonMenu" aria-expanded="false" aria-controls="menu">
       <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2"/></svg>
       Menú
     </button>
     <nav class="menu" id="menu" aria-label="Secciones">
-      <a href="#furgoneta">Furgoneta</a>
-      <a href="#sonido">Sonido</a>
-      <a href="#objetos">Objetos</a>
-      <a href="#caja">Caja secreta</a>
-      <a href="#analizar">Analizar</a>
-      <a href="#raid">Raid</a>
+      <a href="#sonidos">Sonidos</a>
+      <a href="#candidatos">Candidatos</a>
+      <a href="#comprar">¿Qué comprar?</a>
+      <a href="#vender">Vender</a>
     </nav>
     <button id="botonTema" aria-label="Cambiar a modo claro" title="Cambiar tema">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -400,45 +385,111 @@ tr.elegida { box-shadow: inset 4px 0 0 var(--naranja); background: var(--verde-f
   <!-- ========================== 01 · CALCULADORA DE LA FURGONETA ========================== -->
   <section class="seccion" id="furgoneta" aria-labelledby="t-furgo">
     <div class="sec-cab"><span class="sec-num">01</span><h2 id="t-furgo">Calculadora de la furgoneta</h2></div>
-    <p class="lead">El Comerciante de campo («la furgoneta») aparece dentro de la raid desde la temporada 7: le compras cargas y le vendes para liberar espacio. Elige dónde estás y verás qué carga compensa comprar, según las tablas de reparto del juego. <span class="etiqueta-verificar">verificar en el juego</span></p>
+    <p class="lead">Mira qué objetos puede darte el Comerciante de campo e identifícalos por el sonido que hacen al cogerlos. Probabilidades según las tablas de reparto del juego. <span class="etiqueta-verificar">verificar en el juego</span></p>
 
-    <div class="tarjeta marcada">
-      <div class="escenario">
-        <label class="campo ancho"><span>Mapa y modo</span><select id="eMapa"></select></label>
-        <label class="campo"><span>Tipo de carga</span><select id="eTipo"></select></label>
-        <label class="campo"><span>Precio de la carga</span><select id="ePrecio"></select></label>
-        <label class="campo"><span>Valorar con</span>
-          <select id="eValor">
-            <option value="mercado">Precio de mercado</option>
-            <option value="contacto">Precio de contacto</option>
-          </select>
-        </label>
+    <div class="app">
+      <!-- Filtros -->
+      <details class="tarjeta panel-filtros" id="panelFiltros" open>
+        <summary>Filtros</summary>
+        <form class="cuerpo-filtros" id="formFiltros" onsubmit="return false">
+          <button type="button" id="btnRestablecer">↺ Restablecer filtros</button>
+          <label class="campo"><span>Buscar</span><input type="search" id="fBuscar" placeholder="Buscar objetos…" autocomplete="off"></label>
+          <label class="campo"><span>Mapa / modo</span><select id="fMapa"></select></label>
+          <div class="campo"><span id="t-formato">Formato / tamaño</span>
+            <div class="formatos" id="fFormato" role="group" aria-labelledby="t-formato"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="fRotar"> Permitir rotación</label>
+          <label class="campo"><span>Tipo de carga</span><select id="fTipo"></select></label>
+          <label class="campo"><span>Precio de la carga</span><select id="fPrecio"></select></label>
+          <label class="campo"><span>Rareza</span><select id="fRareza"></select></label>
+          <label class="campo"><span>Categoría</span><select id="fCategoria"></select></label>
+          <label class="campo"><span>Valorar con</span>
+            <select id="fValor">
+              <option value="mercado">Precio de mercado</option>
+              <option value="contacto">Precio de contacto</option>
+            </select>
+          </label>
+          <p class="credito" id="resumenFiltros" aria-live="polite" style="margin:0"></p>
+        </form>
+      </details>
+
+      <div class="app-main">
+        <details class="tarjeta como">
+          <summary>¿Cómo se usa?</summary>
+          <ol>
+            <li>Elige el <strong>mapa y modo</strong> donde estás.</li>
+            <li>En «¿Qué carga comprar?» mira qué carga compensa y marca en los filtros el <strong>tipo y precio</strong> de la que compres (o pulsa su fila).</li>
+            <li>Coge el objeto y compara su sonido con los botones <strong>▶ Coger</strong>. Pulsa la tarjeta que suena igual.</li>
+            <li>En <strong>Candidatos</strong> verás qué puede ser, cuánto vale y con qué probabilidad. Si ves la forma o el color, márcalos en los filtros para afinar.</li>
+          </ol>
+        </details>
+
+        <!-- Sonidos -->
+        <div class="tarjeta" id="sonidos">
+          <div class="cab-bloque">
+            <h3><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="var(--naranja)" stroke-width="2"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="var(--naranja)" stroke-width="2"/></svg>Sonidos <small>(38)</small></h3>
+            <div class="fila">
+              <label class="check"><input type="checkbox" id="autoSonar"> Sonar al elegir</label>
+              <label class="volumen-pildora"><span class="visualmente-oculto">Volumen</span><span aria-hidden="true">🔊</span><input type="range" id="volumen" min="0" max="100" value="80"><output id="volTexto">80 %</output></label>
+            </div>
+          </div>
+          <div class="sonidos-grid" id="gridSonidos" role="group" aria-label="Sonidos del 1 al 38"></div>
+          <p class="credito" style="margin:12px 0 0">Pulsa una tarjeta para filtrar los candidatos por ese sonido (otra vez para quitarlo). Teclado: flechas para moverte y escribe el número (p. ej. 12).</p>
+        </div>
+
+        <!-- Candidatos -->
+        <div class="tarjeta marcada" id="candidatos">
+          <div class="cab-bloque">
+            <h3 id="tituloCandidatos">Candidatos</h3>
+            <div class="fila">
+              <button id="btnQuitarSonido" hidden>✕ Quitar sonido</button>
+              <label class="campo" style="min-width:190px"><span>Ordenar por</span>
+                <select id="ordenCandidatos">
+                  <option value="prob">Probabilidad</option>
+                  <option value="valor-desc">Valor (mayor primero)</option>
+                  <option value="valor-asc">Valor (menor primero)</option>
+                  <option value="rareza">Rareza</option>
+                  <option value="nombre">Nombre A-Z</option>
+                  <option value="sonido">Sonido</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div id="resumenCandidatos" aria-live="polite"></div>
+          <div class="candidatos-grid" id="gridCandidatos"></div>
+        </div>
+
+        <!-- ¿Qué carga comprar? -->
+        <div class="tarjeta" id="comprar">
+          <div class="cab-bloque">
+            <h3>¿Qué carga comprar?</h3>
+            <label class="campo" style="width:220px"><span>Ordenar por</span>
+              <select id="ordenCargas">
+                <option value="beneficio">Beneficio esperado</option>
+                <option value="ganar">Probabilidad de ganar</option>
+                <option value="precio">Precio</option>
+                <option value="frecuencia">Frecuencia</option>
+              </select>
+            </label>
+          </div>
+          <p class="credito" id="resumenCargas"></p>
+          <div class="tabla-envoltura apilable">
+            <table>
+              <caption class="visualmente-oculto">Cargas del Comerciante de campo con su valor esperado</caption>
+              <thead><tr><th>Carga</th><th class="num">Precio</th><th class="num">Frecuencia</th><th class="num">Valor esperado</th><th class="num">Beneficio esperado</th><th class="num">P. de ganar</th><th>Lo mejor que puede salir</th></tr></thead>
+              <tbody id="cuerpoCargas"></tbody>
+            </table>
+          </div>
+          <p class="aviso" style="margin-bottom:0"><strong>Sigue siendo una apuesta.</strong> «Beneficio esperado» es la media a largo plazo; una sola compra puede salir muy por debajo. «P. de ganar» = probabilidad de que el objeto valga más de lo que pagas. Pulsa una fila para elegir esa carga. En Operaciones tácticas solo puedes comprar suministros misteriosos 2 veces por raid. <span class="etiqueta-verificar">verificar en el juego</span></p>
+        </div>
       </div>
-      <p class="credito" id="resumenEscenario" aria-live="polite" style="margin:10px 0 0"></p>
     </div>
+  </section>
 
-    <h3 style="margin:24px 0 8px">¿Qué carga comprar?</h3>
-    <div class="fila" style="margin-bottom:12px; gap:12px; align-items:end">
-      <label class="campo" style="width:220px"><span>Ordenar por</span>
-        <select id="ordenCargas">
-          <option value="beneficio">Beneficio esperado</option>
-          <option value="ganar">Probabilidad de ganar</option>
-          <option value="precio">Precio</option>
-          <option value="frecuencia">Frecuencia</option>
-        </select>
-      </label>
-      <p class="credito" id="resumenCargas" style="margin:0 0 10px"></p>
-    </div>
-    <div class="tabla-envoltura apilable">
-      <table>
-        <caption class="visualmente-oculto">Cargas del Comerciante de campo con su valor esperado</caption>
-        <thead><tr><th>Carga</th><th class="num">Precio</th><th class="num">Frecuencia</th><th class="num">Valor esperado</th><th class="num">Beneficio esperado</th><th class="num">P. de ganar</th><th>Lo mejor que puede salir</th></tr></thead>
-        <tbody id="cuerpoCargas"></tbody>
-      </table>
-    </div>
-    <p class="aviso"><strong>Sigue siendo una apuesta.</strong> «Beneficio esperado» es la media a largo plazo; una sola compra puede salir muy por debajo. «P. de ganar» = probabilidad de que el objeto valga más de lo que pagas. Pulsa una fila para elegir esa carga y pasar al sonido. En Operaciones tácticas solo puedes comprar suministros misteriosos 2 veces por raid. <span class="etiqueta-verificar">verificar en el juego</span></p>
-
-    <h3 style="margin:24px 0 8px" id="vender">Vender a la furgoneta</h3>
+  <!-- ========================== 02 · VENDER ========================== -->
+  <section class="seccion" id="vender" aria-labelledby="t-vender">
+    <div class="sec-cab"><span class="sec-num">02</span><h2 id="t-vender">Vender a la furgoneta</h2></div>
+    <p class="lead">Le vendes para liberar espacio. En Operaciones tácticas paga el 110 % del valor. <span class="etiqueta-verificar">verificar en el juego</span></p>
     <div class="tarjeta" style="margin-bottom:16px">
       <div class="fila" style="gap:16px; align-items:end">
         <fieldset style="border:0;padding:0;margin:0">
@@ -453,7 +504,6 @@ tr.elegida { box-shadow: inset 4px 0 0 var(--naranja); background: var(--verde-f
       </div>
       <p class="credito" style="margin:10px 0 0" id="notaModo"></p>
     </div>
-
     <div class="rejilla-2">
       <div class="tarjeta">
         <h3>Lo que llevo</h3>
@@ -468,7 +518,6 @@ tr.elegida { box-shadow: inset 4px 0 0 var(--naranja); background: var(--verde-f
         </div>
         <p class="credito" style="margin-top:8px">Si escribes el nombre de un objeto, se rellenan su valor (según «Valorar con») y sus casillas.</p>
       </div>
-
       <div class="tarjeta marcada">
         <h3>Si se lo vendo todo</h3>
         <div class="stats">
@@ -482,211 +531,9 @@ tr.elegida { box-shadow: inset 4px 0 0 var(--naranja); background: var(--verde-f
       </div>
     </div>
   </section>
-
-  <!-- ========================== 02 · SONIDO ========================== -->
-  <section class="seccion" id="sonido" aria-labelledby="t-sonido">
-    <div class="sec-cab"><span class="sec-num">02</span><h2 id="t-sonido">Identificar por sonido</h2></div>
-    <p class="lead">Con la carga elegida arriba: coge el objeto, escucha el sonido y pulsa el número que suena igual. Verás qué puede ser, cuánto vale y con qué probabilidad.</p>
-    <div class="fila" style="gap:16px; align-items:end">
-      <label class="campo" style="width:260px"><span>Volumen <output id="volTexto" class="mono">80 %</output></span><input type="range" id="volumen" min="0" max="100" value="80"></label>
-      <label class="check"><input type="checkbox" id="autoSonar" checked> Sonar al elegir</label>
-      <p class="credito" id="cargaSonido" style="margin:0 0 12px"></p>
-    </div>
-
-    <div class="sonido-layout">
-      <div class="tarjeta">
-        <h3 id="t-ids">Sonidos (38)</h3>
-        <div class="rejilla-sonidos" id="rejillaSonidos" role="group" aria-labelledby="t-ids"></div>
-        <p class="leyenda"><span><i></i>Un solo objeto posible: identificación segura</span><span><i class="nada"></i>No sale en esta carga</span></p>
-        <p class="credito" style="margin:8px 0 0">Atajos: flechas para moverte; escribe el número (por ejemplo <kbd>1</kbd><kbd>2</kbd>) para elegir; <kbd>Espacio</kbd> en un sonido lo vuelve a reproducir.</p>
-      </div>
-      <div class="tarjeta marcada">
-        <div class="cab-resultado">
-          <h3 id="tituloResultado">Elige un sonido</h3>
-          <div class="fila">
-            <button id="btnRepetir" disabled>▶ Repetir</button>
-            <label class="campo" style="min-width:180px"><span>Ordenar por</span>
-              <select id="ordenSonido">
-                <option value="prob">Probabilidad</option>
-                <option value="valor-desc">Valor (mayor primero)</option>
-                <option value="valor-asc">Valor (menor primero)</option>
-                <option value="rareza">Rareza</option>
-              </select>
-            </label>
-          </div>
-        </div>
-        <div id="resultadoSonido" aria-live="polite"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================== 03 · OBJETOS ========================== -->
-  <section class="seccion" id="objetos" aria-labelledby="t-objetos">
-    <div class="sec-cab"><span class="sec-num">03</span><h2 id="t-objetos">Objetos del Comerciante</h2></div>
-    <p class="lead">Los 189 objetos que puede dar la furgoneta. Pulsa el número de sonido para oírlo y verlo en el apartado 02.</p>
-    <form class="filtros" id="filtros" role="search" aria-label="Filtrar objetos" onsubmit="return false">
-      <label class="campo" style="grid-column: span 2"><span>Buscar por nombre</span><input type="search" id="fBuscar" placeholder="Ej.: tarjeta gráfica, oro, radio…" autocomplete="off"></label>
-      <label class="campo"><span>Mapa y modo</span><select id="fMapa"></select></label>
-      <label class="campo"><span>Sonido</span><select id="fSonido"></select></label>
-      <label class="campo"><span>Tamaño</span><select id="fTamano"></select></label>
-      <label class="check"><input type="checkbox" id="fRotar" checked> Permitir rotación</label>
-      <label class="campo"><span>Categoría</span><select id="fCategoria"></select></label>
-      <label class="campo"><span>Tipo de carga</span><select id="fCarga"></select></label>
-      <label class="campo"><span>Precio de carga</span><select id="fPrecioCarga"></select></label>
-      <label class="campo"><span>Rareza</span><select id="fRareza"></select></label>
-      <label class="campo"><span>Ordenar</span>
-        <select id="fOrden">
-          <option value="valor-desc">Valor ↓</option>
-          <option value="valor-asc">Valor ↑</option>
-          <option value="rareza">Rareza ↓</option>
-          <option value="nombre">Nombre A-Z</option>
-          <option value="sonido">Sonido</option>
-        </select>
-      </label>
-      <div><button type="reset">Limpiar filtros</button></div>
-    </form>
-    <p class="contador" id="contadorTabla" aria-live="polite"></p>
-    <div class="tabla-envoltura apilable">
-      <table>
-        <caption class="visualmente-oculto">Objetos del Comerciante de campo</caption>
-        <thead><tr><th>Objeto</th><th class="num">Sonido</th><th>Rareza</th><th>Tamaño</th><th>Categoría</th><th class="num">Mercado</th><th class="num">Contacto</th><th>Dónde sale</th></tr></thead>
-        <tbody id="cuerpoTabla"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ========================== 04 · CAJA SECRETA ========================== -->
-  <section class="seccion" id="caja" aria-labelledby="t-caja">
-    <div class="sec-cab"><span class="sec-num">04</span><h2 id="t-caja">Caja fuerte secreta · Estación de TV</h2></div>
-    <p class="lead">La Estación de TV es un mapa difícil. La caja fuerte de alto secreto tarda 60 s en abrirse y hace mucho ruido: vigila escaleras y puertas. <strong>Prioriza siempre extraer.</strong> <span class="etiqueta-verificar">verificar en el juego</span></p>
-    <div class="rejilla-2">
-      <div class="tarjeta marcada temporizador">
-        <h3 style="justify-content:center">Cuenta atrás</h3>
-        <div class="reloj" id="relojCaja" aria-hidden="true">60</div>
-        <p class="visualmente-oculto" id="relojCajaLector" aria-live="assertive"></p>
-        <div class="barra" id="barraCaja" role="progressbar" aria-label="Tiempo restante de la caja" aria-valuemin="0" aria-valuemax="60" aria-valuenow="60"><div></div></div>
-        <div class="marcas-barra" aria-hidden="true"><span>0</span><span>10</span><span>30</span><span>60 s</span></div>
-        <div class="fila" style="justify-content:center; margin-top:16px">
-          <button class="primario" id="btnCaja" style="min-width:160px">Iniciar</button>
-          <button id="btnCajaParar">Parar</button>
-        </div>
-        <div class="fila" style="justify-content:center; margin-top:8px">
-          <label class="check"><input type="checkbox" id="cajaPitidos" checked> Pitidos</label>
-          <label class="check"><input type="checkbox" id="cajaVibrar" checked> Vibración</label>
-        </div>
-        <p class="credito" style="margin:8px 0 0">Avisa a los 30, 10 y 0 s. La vibración solo funciona en móviles que la permiten.</p>
-      </div>
-      <div class="tarjeta">
-        <h3>Cajas gratuitas (5)</h3>
-        <div id="cajasTV" class="cajas-tv"></div>
-        <div class="fila" style="margin-top:12px"><button id="btnCajasReiniciar">Desmarcar todas</button></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================== 05 · ANALIZAR ========================== -->
-  <section class="seccion" id="analizar" aria-labelledby="t-analizar">
-    <div class="sec-cab"><span class="sec-num">05</span><h2 id="t-analizar">Analizar sonidos</h2> <span class="etiqueta-verificar">experimental</span></div>
-    <p class="aviso"><strong>Aproximado.</strong> Compara lo que oye el micrófono (o un audio que subas) con los 38 sonidos del juego. El ruido, los auriculares y el volumen cambian mucho el resultado: lo fiable es escuchar los botones del apartado 02. Nada sale de tu dispositivo y el micrófono solo se activa al pulsar el botón.</p>
-    <div class="rejilla-2">
-      <div class="tarjeta">
-        <h3>Fuente</h3>
-        <div class="fila">
-          <button id="btnMic" class="primario" aria-pressed="false">🎙 Activar micrófono</button>
-          <span class="selector-archivo"><span class="boton">Subir audio</span><input type="file" id="archivoAnalisis" accept="audio/*" aria-label="Subir un audio para analizar"></span>
-        </div>
-        <p class="credito" id="estadoFuente" aria-live="polite" style="margin-top:8px">Sin fuente activa.</p>
-        <canvas class="lienzo" id="espectrograma" aria-label="Espectrograma en directo: tiempo en horizontal, frecuencia en vertical (graves abajo)" role="img"></canvas>
-        <div class="fila" style="margin-top:10px">
-          <span class="credito" style="margin:0">Volumen</span>
-          <div class="medidor" aria-hidden="true"><div id="medidorBarra"></div></div>
-          <output id="medidorTexto" class="mono" style="min-width:70px">— dB</output>
-        </div>
-      </div>
-      <div class="tarjeta marcada">
-        <h3>Escuchar y comparar</h3>
-        <div class="fila-campos">
-          <label class="campo"><span>Duración</span><select id="anSegundos"><option value="2">2 s</option><option value="3" selected>3 s</option><option value="5">5 s</option></select></label>
-          <label class="check"><input type="checkbox" id="anSoloPosibles" checked> Solo sonidos posibles en la carga elegida</label>
-        </div>
-        <div class="fila">
-          <button id="btnEscuchar" class="primario">🎙 Escuchar con el micro</button>
-          <button id="btnAnalizarArchivo" disabled>Analizar el audio subido</button>
-        </div>
-        <p class="credito" id="estadoAnalisis" aria-live="polite" style="margin-top:8px">Pulsa «Escuchar», coge el objeto en el juego y deja que suene cerca del micro.</p>
-        <ul class="coincidencias" id="coincidencias"></ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================== 06 · RAID ========================== -->
-  <section class="seccion" id="raid" aria-labelledby="t-raid">
-    <div class="sec-cab"><span class="sec-num">06</span><h2 id="t-raid">Raid: checklist y beneficio</h2></div>
-    <div class="rejilla-2">
-      <div class="tarjeta">
-        <h3>Checklist de raid</h3>
-        <div class="temporizador" style="padding:0 0 8px">
-          <div class="reloj" id="relojRaid" style="font-size:clamp(2.6rem, 8vw, 3.6rem)">30:00</div>
-          <p class="visualmente-oculto" id="relojRaidLector" aria-live="polite"></p>
-          <div class="fila" style="justify-content:center; margin-top:8px; align-items:end">
-            <button class="primario" id="btnRaidIniciar">Iniciar</button>
-            <button id="btnRaidPausa">Pausa</button>
-            <button id="btnRaidReiniciar">Reiniciar</button>
-            <label class="campo" style="width:110px; text-align:left"><span>Minutos</span><input type="number" id="raidMinutos" min="1" max="90" value="30" inputmode="numeric"></label>
-          </div>
-          <p class="credito" style="margin:6px 0 0">Avisa a los 5 min, a 1 min y al final. Duración de la raid <span class="etiqueta-verificar">verificar en el juego</span></p>
-        </div>
-        <ul class="checklist" id="checklist"></ul>
-        <form class="fila" id="formChecklist" style="flex-wrap:nowrap">
-          <label class="visualmente-oculto" for="nuevoPaso">Nuevo punto de la checklist</label>
-          <input type="text" id="nuevoPaso" maxlength="80" placeholder="Añadir punto…">
-          <button type="submit">Añadir</button>
-        </form>
-        <div class="fila" style="margin-top:8px"><button id="btnDesmarcar">Desmarcar todo</button></div>
-      </div>
-
-      <div class="tarjeta marcada">
-        <h3>Calculadora de beneficio</h3>
-        <div class="fila-campos">
-          <label class="campo"><span>Coste del equipo</span><input type="number" id="bCoste" min="0" inputmode="numeric" placeholder="0"></label>
-          <label class="campo"><span>Valor del botín</span><input type="number" id="bLoot" min="0" inputmode="numeric" placeholder="0"></label>
-          <label class="campo"><span>Ventas a la furgoneta</span><input type="number" id="bFurgo" min="0" inputmode="numeric" placeholder="0"></label>
-          <label class="campo"><span>Mapa</span><select id="bMapa"></select></label>
-        </div>
-        <div class="resultado-raid" id="bResultado" aria-live="polite">Introduce coste y botín.</div>
-        <div class="fila"><button class="primario" id="btnGuardarRaid">Guardar raid</button><button id="btnBorrarHistorial" class="peligro">Borrar historial</button></div>
-        <h3 style="margin-top:16px">Últimas 10 raids</h3>
-        <div class="stats">
-          <div class="stat"><span>Media</span><b id="hMedia">—</b></div>
-          <div class="stat"><span>Con beneficio</span><b id="hGanadas">—</b></div>
-        </div>
-        <div class="tabla-envoltura apilable">
-          <table>
-            <caption class="visualmente-oculto">Historial de raids</caption>
-            <thead><tr><th>Fecha</th><th>Mapa</th><th class="num">Coste</th><th class="num">Ingresos</th><th class="num">Neto</th></tr></thead>
-            <tbody id="cuerpoHistorial"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
 </main>
 
-<!-- ========================== PIE ========================== -->
-<footer class="pie">
-  <div class="pie-in">
-    <p><strong>Proyecto de fans no oficial y de uso personal.</strong> Sin relación con MoreFun Studio ni con los editores de Arena Breakout: Infinite. Los nombres, imágenes y sonidos del juego pertenecen a sus dueños. Los nombres en español son traducciones propias y pueden no coincidir con los del juego. Precios y probabilidades cambian con los parches: lo marcado como <span class="etiqueta-verificar">verificar en el juego</span> puede estar desactualizado.</p>
-    <p style="margin:0">Fuentes y créditos:</p>
-    <ul>
-      <li><a href="https://abibuilder.com/merchant" target="_blank" rel="noopener noreferrer">ABI Builder · Comerciante</a> — tablas de reparto y sonidos (datos de la comunidad, extraídos por Maoyan). Versión de datos <span id="versionDatos" class="mono"></span>.</li>
-      <li><a href="https://abi-sound-calculate-items.cayetanomoron2000.workers.dev" target="_blank" rel="noopener noreferrer">Calculadora de la furgoneta</a> — base de datos de objetos y sonidos.</li>
-      <li><a href="https://github.com/hexaov91/abi-assets" target="_blank" rel="noopener noreferrer">hexaov91/abi-assets</a> — imágenes de los objetos.</li>
-      <li><a href="https://arenabreakout-infinite.com" target="_blank" rel="noopener noreferrer">arenabreakout-infinite.com</a> — guías de ayuda.</li>
-    </ul>
-    <p style="margin:12px 0 0">Funciona sin conexión. Tus datos se guardan solo en este navegador.</p>
-  </div>
-</footer>
-
+<a class="boton primario flotante" id="irCandidatos" href="#candidatos" hidden>Ver candidatos ↓</a>
 <div class="tostada" id="tostada" role="status" hidden></div>
 
 <script>
@@ -704,27 +551,16 @@ const DATOS = {"version":"1.0.0.151.10","fecha":"2026-09-22","objetos":[["408010
    CONFIGURACIÓN EDITABLE — "verificar en el juego"
    ========================================================================== */
 const NUM_SONIDOS = 38;
+const MINIATURAS_POR_SONIDO = 5;   // el resto se resume en "+N"
 const RAREZAS = ['', 'Común', 'Poco común', 'Raro', 'Épico', 'Legendario', 'Mítico'];
 const TAMANOS = ['1x1', '1x2', '2x1', '2x2', '2x3', '3x2'];
-/** Escenario por defecto: Estación de TV en confinamiento, carga misteriosa de 70.000. */
-const ESCENARIO_INICIAL = { mapa: 'Estación de TV · Confinamiento', tipo: 100022, precio: 70000 };
+/** Filtros por defecto: Estación de TV en confinamiento, carga misteriosa de 70.000. */
+const FILTROS_INICIALES = { mapa: 'Estación de TV · Confinamiento', tipo: 100022, precio: 70000, valor: 'mercado', formato: '', rotar: true, rareza: 0, categoria: '' };
 
 const MODOS = {
   tactical: { moneda: 'Koen', porcentaje: 110, nota: 'Operaciones tácticas: venta al 110 % y hasta 2 suministros misteriosos por raid.' },
   zombie: { moneda: 'Moneda zombi', porcentaje: 100, nota: 'Zombis sin fin: pon el nombre real de la moneda y su % de venta.' }
 };
-
-/** Cajas gratuitas de la Estación de TV: 3 en la planta 1 y 2 en la planta 2. */
-const CAJAS_TV = [
-  { planta: 1, nombre: 'Caja 1' }, { planta: 1, nombre: 'Caja 2' }, { planta: 1, nombre: 'Caja 3' },
-  { planta: 2, nombre: 'Caja 4' }, { planta: 2, nombre: 'Caja 5' }
-];
-
-const CHECKLIST_BASE = [
-  'Caja segura con lo importante', 'Munición y cargadores llenos', 'Vendas, curas y analgésicos',
-  'Comida y agua', 'Llave o tarjeta si hace falta', 'Punto de extracción decidido',
-  'Hueco libre en la mochila para la furgoneta', 'Moneda para cajas misteriosas'
-];
 
 /* =============================================================================
    UTILIDADES
@@ -751,8 +587,6 @@ function fmtCorto(n) {
 }
 const pct = p => (p >= 0.995 || p === 0 ? Math.round(p * 100) : p < 0.01 ? '<1' : (p * 100).toFixed(p < 0.1 ? 1 : 0).replace('.', ',')) + ' %';
 const signo = n => (n > 0 ? '+' : '') + fmt(n);
-
-/** Normaliza para buscar sin tildes ni mayúsculas. */
 const normal = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 /** localStorage envuelto en try/catch: si falla o está vacío, devuelve el valor por defecto. */
@@ -782,37 +616,6 @@ function descargarJSON(nombre, datos) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Un único AudioContext, creado tras un gesto del usuario. */
-let audioCtx = null;
-function obtenerAudioCtx() {
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    return audioCtx;
-  } catch { return null; }
-}
-
-/** Pitido generado con Web Audio (sin archivos). */
-function pitar(frec = 880, dur = 0.15, veces = 1, hueco = 0.1) {
-  const ctx = obtenerAudioCtx();
-  if (!ctx) return;
-  let t = ctx.currentTime + 0.02;
-  for (let i = 0; i < veces; i++) {
-    const osc = ctx.createOscillator();
-    const gan = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = frec;
-    gan.gain.setValueAtTime(0.0001, t);
-    gan.gain.exponentialRampToValueAtTime(0.22, t + 0.01);
-    gan.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(gan).connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + dur + 0.02);
-    t += dur + hueco;
-  }
-}
-function vibrar(patron) { try { if (navigator.vibrate) navigator.vibrate(patron); } catch { /* no disponible */ } }
-
 /* =============================================================================
    MODELO: objetos, perfiles (mapa/modo) y repartos de cada carga
    ========================================================================== */
@@ -836,20 +639,25 @@ const MAPAS = (() => {
 const perfilDeMapa = etiqueta => MAPAS.find(m => m.etiqueta === etiqueta)?.perfil ?? null;
 const companerosDe = perfil => MAPAS.filter(m => m.perfil === perfil).map(m => m.etiqueta);
 
-/** Ajustes compartidos: escenario elegido y cómo se valoran los objetos. */
-const ajustes = (() => {
-  const g = almacen.leer('escenario', {});
-  const mapa = typeof g.mapa === 'string' && (g.mapa === '' || perfilDeMapa(g.mapa)) ? g.mapa : ESCENARIO_INICIAL.mapa;
+/** Filtros (se guardan, salvo la búsqueda). */
+const filtros = (() => {
+  const g = almacen.leer('filtros', {});
+  const num = (v, def) => (Number.isFinite(v) ? v : def);
   return {
-    mapa,
-    tipo: Number.isFinite(g.tipo) ? g.tipo : ESCENARIO_INICIAL.tipo,
-    precio: Number.isFinite(g.precio) ? g.precio : ESCENARIO_INICIAL.precio,
-    valor: g.valor === 'contacto' ? 'contacto' : 'mercado'
+    texto: '',
+    mapa: typeof g.mapa === 'string' && (g.mapa === '' || perfilDeMapa(g.mapa)) ? g.mapa : FILTROS_INICIALES.mapa,
+    tipo: num(g.tipo, FILTROS_INICIALES.tipo),
+    precio: num(g.precio, FILTROS_INICIALES.precio),
+    valor: g.valor === 'contacto' ? 'contacto' : 'mercado',
+    formato: TAMANOS.includes(g.formato) ? g.formato : '',
+    rotar: g.rotar !== false,
+    rareza: num(g.rareza, 0),
+    categoria: typeof g.categoria === 'string' ? g.categoria : ''
   };
 })();
-const guardarAjustes = () => almacen.guardar('escenario', ajustes);
-const perfilActual = () => (ajustes.mapa ? perfilDeMapa(ajustes.mapa) : null);
-const valorDe = o => (ajustes.valor === 'contacto' ? o.contacto : o.mercado);
+const guardarFiltros = () => { const { texto, ...resto } = filtros; almacen.guardar('filtros', resto); };
+const perfilActual = () => (filtros.mapa ? perfilDeMapa(filtros.mapa) : null);
+const valorDe = o => (filtros.valor === 'contacto' ? o.contacto : o.mercado);
 
 function repartosDe({ perfil = null, tipo = null, precio = null } = {}) {
   return REPARTOS.filter(r => (!perfil || r.perfil === perfil) && (!tipo || r.tipo === tipo) && (!precio || r.precio === precio));
@@ -873,16 +681,24 @@ function distribucion(perfil, tipo, precio) {
   return prob;
 }
 
-/** Objetos posibles en el escenario actual: con probabilidades si hay tipo y precio. */
-function posiblesEscenario() {
+/** Objetos que pasan los filtros (sin contar el sonido elegido) y la distribución si hay carga y precio. */
+function filtrados() {
   const perfil = perfilActual();
-  const dist = ajustes.tipo && ajustes.precio ? distribucion(perfil, ajustes.tipo, ajustes.precio) : null;
-  if (dist) return { dist, ids: new Set(dist.keys()) };
-  if (perfil || ajustes.tipo) {
-    const ids = new Set(repartosDe({ perfil, tipo: ajustes.tipo || null }).flatMap(r => r.objetos.map(([id]) => id)));
-    return { dist: null, ids };
+  const dist = filtros.tipo && filtros.precio ? distribucion(perfil, filtros.tipo, filtros.precio) : null;
+  let base = OBJETOS;
+  if (dist) base = OBJETOS.filter(o => dist.has(o.id));
+  else if (perfil || filtros.tipo || filtros.precio) {
+    const ids = new Set(repartosDe({ perfil, tipo: filtros.tipo || null, precio: filtros.precio || null }).flatMap(r => r.objetos.map(([id]) => id)));
+    base = OBJETOS.filter(o => ids.has(o.id));
   }
-  return { dist: null, ids: new Set(OBJETOS.map(o => o.id)) };
+  const q = normal(filtros.texto.trim());
+  const girado = filtros.formato.split('x').reverse().join('x');
+  const lista = base.filter(o =>
+    (!q || normal(o.nombre).includes(q) || normal(o.original).includes(q)) &&
+    (!filtros.formato || o.tamano === filtros.formato || (filtros.rotar && o.tamano === girado)) &&
+    (!filtros.rareza || o.rareza === filtros.rareza) &&
+    (!filtros.categoria || o.categoria === filtros.categoria));
+  return { lista, dist };
 }
 
 /** Cargas (tipo · precio) donde aparece un objeto, opcionalmente en un perfil. */
@@ -894,9 +710,9 @@ function dondeSale(id, perfil) {
   return [...vistos.values()].sort((a, b) => a.precio - b.precio);
 }
 
-/** Icono del objeto con su imagen local (o la silueta si falla). */
-function htmlIcono(o, tam) {
-  return `<span class="icono" style="--rc: var(--r${o.rareza})"><img src="${esc(o.img)}" alt="" loading="lazy" width="${tam}" height="${tam}" data-silueta="${esc(o.tamano)}"></span>`;
+/** Icono del objeto con su imagen local y fondo del color de su rareza (o la silueta si falla). */
+function htmlIcono(o, px, clase = 'icono') {
+  return `<span class="${clase}" style="--rc: var(--r${o.rareza}); width:${px}px; height:${px}px" title="${esc(o.nombre)} · ${fmtCorto(valorDe(o))}"><img src="${esc(o.img)}" alt="${clase === 'miniatura' ? esc(o.nombre) : ''}" loading="lazy" data-silueta="${esc(o.tamano)}"></span>`;
 }
 document.addEventListener('error', e => {
   const img = e.target;
@@ -908,10 +724,17 @@ document.addEventListener('error', e => {
 const htmlRareza = r => `<span class="rareza r${r}">${RAREZAS[r]}</span>`;
 const chipsCargas = lista => lista.map(c => `<span class="chip">${esc(nombreTipo(c.tipo))} · <span class="mono">${fmt(c.precio)}</span></span>`).join('');
 
+/** Silueta del tamaño para el selector de formato. */
+function svgFormato(t) {
+  const [w, h] = t.split('x').map(Number);
+  const c = 9, g = 2, W = w * c + (w - 1) * g, H = h * c + (h - 1) * g;
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${Array.from({ length: w * h }, (_, i) => `<rect x="${(i % w) * (c + g)}" y="${Math.floor(i / w) * (c + g)}" width="${c}" height="${c}" rx="1" fill="currentColor"/>`).join('')}</svg>`;
+}
+
 /* =============================================================================
    REPRODUCIR LOS SONIDOS DEL JUEGO (audio/<n>.ogg)
    ========================================================================== */
-const reproductor = { audio: null, volumen: almacen.leer('volumen', 80), actual: null };
+const reproductor = { audio: null, volumen: almacen.leer('volumen', 80) };
 function sonar(n) {
   try {
     if (!reproductor.audio) {
@@ -927,170 +750,142 @@ function sonar(n) {
   } catch { tostada('No se pudo reproducir el sonido.'); }
 }
 function marcarSonando(n) {
-  reproductor.actual = n;
-  $$('.sonido-btn').forEach(b => b.classList.toggle('sonando', Number(b.dataset.s) === n));
+  $$('.tarjeta-sonido').forEach(t => t.classList.toggle('sonando', Number(t.dataset.s) === n));
 }
 
 /* =============================================================================
-   01 · ESCENARIO + IDENTIFICAR POR SONIDO
+   FILTROS
    ========================================================================== */
-const estadoSonido = { s: almacen.leer('sonido', null), orden: almacen.leer('ordenSonido', 'prob') };
-
-function rellenarEscenario() {
-  const selMapa = $('#eMapa');
-  selMapa.innerHTML = '<option value="">Todos los mapas (mezcla aproximada)</option>' +
-    MAPAS.map(m => `<option value="${esc(m.etiqueta)}">${esc(m.etiqueta)}</option>`).join('');
-  selMapa.value = ajustes.mapa;
-  rellenarTipos();
+function opciones(lista, todas) {
+  return `<option value="">${todas}</option>` + lista.map(o => typeof o === 'object'
+    ? `<option value="${esc(o.v)}">${esc(o.t)}</option>` : `<option value="${esc(o)}">${esc(o)}</option>`).join('');
 }
 
 function rellenarTipos() {
-  const perfil = perfilActual();
-  const tipos = [...new Set(repartosDe({ perfil }).map(r => r.tipo))].sort((a, b) => nombreTipo(a).localeCompare(nombreTipo(b), 'es'));
-  if (!tipos.includes(ajustes.tipo)) ajustes.tipo = tipos.includes(100022) ? 100022 : tipos[0] ?? 0;
-  $('#eTipo').innerHTML = '<option value="0">Cualquiera</option>' + tipos.map(t => `<option value="${t}">${esc(nombreTipo(t))}</option>`).join('');
-  $('#eTipo').value = String(ajustes.tipo);
+  const tipos = [...new Set(repartosDe({ perfil: perfilActual() }).map(r => r.tipo))].sort((a, b) => nombreTipo(a).localeCompare(nombreTipo(b), 'es'));
+  if (filtros.tipo && !tipos.includes(filtros.tipo)) filtros.tipo = 0;
+  $('#fTipo').innerHTML = opciones(tipos.map(t => ({ v: t, t: nombreTipo(t) })), 'Todos');
+  $('#fTipo').value = filtros.tipo ? String(filtros.tipo) : '';
   rellenarPrecios();
 }
 
 function rellenarPrecios() {
-  const perfil = perfilActual();
-  const precios = ajustes.tipo ? [...new Set(repartosDe({ perfil, tipo: ajustes.tipo }).map(r => r.precio))].sort((a, b) => a - b) : [];
-  if (!precios.includes(ajustes.precio)) ajustes.precio = precios[0] ?? 0;
-  $('#ePrecio').innerHTML = (precios.length ? '' : '<option value="0">Elige un tipo de carga</option>') +
-    precios.map(p => `<option value="${p}">${fmt(p)}</option>`).join('');
-  $('#ePrecio').value = String(ajustes.precio);
-  $('#ePrecio').disabled = !precios.length;
+  const precios = [...new Set(repartosDe({ perfil: perfilActual(), tipo: filtros.tipo || null }).map(r => r.precio))].sort((a, b) => a - b);
+  if (filtros.precio && !precios.includes(filtros.precio)) filtros.precio = 0;
+  $('#fPrecio').innerHTML = opciones(precios.map(p => ({ v: p, t: fmt(p) })), 'Todos');
+  $('#fPrecio').value = filtros.precio ? String(filtros.precio) : '';
 }
 
-function resumenEscenario() {
+function pintarFormatos() {
+  $('#fFormato').innerHTML = TAMANOS.map(t =>
+    `<button type="button" class="formato-btn" data-formato="${t}" aria-pressed="${filtros.formato === t}" aria-label="Tamaño ${t}">${svgFormato(t)}<span>${t}</span></button>`).join('');
+}
+
+function aplicarFiltrosAlFormulario() {
+  $('#fMapa').value = filtros.mapa;
+  rellenarTipos();
+  $('#fRotar').checked = filtros.rotar;
+  $('#fRareza').value = filtros.rareza ? String(filtros.rareza) : '';
+  $('#fCategoria').value = filtros.categoria;
+  $('#fValor').value = filtros.valor;
+  $('#fBuscar').value = filtros.texto;
+  pintarFormatos();
+}
+
+function resumenFiltros() {
   const perfil = perfilActual();
-  const partes = [];
+  let txt;
   if (perfil) {
-    const otros = companerosDe(perfil).filter(m => m !== ajustes.mapa);
-    partes.push(otros.length ? `Mismo reparto que: ${otros.join(', ')}.` : 'Reparto propio de este mapa.');
-  } else partes.push('Sin mapa: se mezclan todos los mapas, las probabilidades son orientativas.');
-  if (ajustes.tipo && ajustes.precio) {
-    const { ids } = posiblesEscenario();
-    partes.push(`${nombreTipo(ajustes.tipo)} de ${fmt(ajustes.precio)}: ${ids.size} objetos posibles.`);
-  }
-  $('#resumenEscenario').textContent = partes.join(' ');
-  $('#cargaSonido').innerHTML = ajustes.tipo && ajustes.precio
-    ? `Carga: <strong>${esc(nombreTipo(ajustes.tipo))} · ${fmt(ajustes.precio)}</strong> en ${esc(ajustes.mapa || 'todos los mapas')}. <a href="#furgoneta">Cambiar</a>`
-    : 'Sin carga elegida: se muestran todos los objetos de cada sonido. <a href="#furgoneta">Elegir carga</a>';
+    const otros = companerosDe(perfil).filter(m => m !== filtros.mapa);
+    txt = otros.length ? `Mismo reparto que: ${otros.join(', ')}.` : 'Reparto propio de este mapa.';
+  } else txt = 'Sin mapa: se mezclan todos los mapas (probabilidades orientativas).';
+  if (!(filtros.tipo && filtros.precio)) txt += ' Elige tipo y precio de carga para ver probabilidades.';
+  $('#resumenFiltros').textContent = txt;
 }
 
-function escenarioCambiado() {
-  guardarAjustes();
-  resumenEscenario();
-  pintarRejilla();
-  pintarResultado();
+/** Repinta todo lo que depende de los filtros. */
+function filtrosCambiados() {
+  guardarFiltros();
+  resumenFiltros();
+  pintarSonidos();
+  pintarCandidatos();
   pintarCargas();
-  pintarTabla();
   pintarResultadosVenta();
 }
 
-function pintarRejilla() {
-  const cont = $('#rejillaSonidos');
-  if (!cont.children.length) {
-    cont.innerHTML = Array.from({ length: NUM_SONIDOS }, (_, i) =>
-      `<button class="sonido-btn" data-s="${i + 1}" aria-pressed="false"><span class="n">${i + 1}</span><span class="c"></span><span class="v"></span></button>`).join('');
-  }
-  const { ids } = posiblesEscenario();
-  $$('.sonido-btn', cont).forEach(btn => {
-    const s = Number(btn.dataset.s);
-    const lista = OBJETOS.filter(o => o.sonido === s && ids.has(o.id));
-    const n = lista.length;
-    const max = n ? Math.max(...lista.map(valorDe)) : 0;
-    const elegido = s === estadoSonido.s;
-    btn.classList.toggle('sin-datos', n === 0);
-    btn.classList.toggle('segura', n === 1);
-    btn.setAttribute('aria-pressed', String(elegido));
-    btn.tabIndex = elegido || (!estadoSonido.s && s === 1) ? 0 : -1;
-    $('.c', btn).textContent = n === 0 ? 'no sale' : n === 1 ? '✓ 1 objeto' : `${n} objetos`;
-    $('.v', btn).textContent = n ? `hasta ${fmtCorto(max)}` : '';
-    btn.setAttribute('aria-label', `Sonido ${s}: ${n === 0 ? 'no sale en esta carga' : n === 1 ? '1 objeto, identificación segura' : n + ' objetos posibles'}`);
+function iniciarFiltros() {
+  $('#fMapa').innerHTML = '<option value="">Todos los mapas</option>' + MAPAS.map(m => `<option value="${esc(m.etiqueta)}">${esc(m.etiqueta)}</option>`).join('');
+  $('#fRareza').innerHTML = opciones(RAREZAS.slice(1).map((r, i) => ({ v: i + 1, t: r })).filter(r => OBJETOS.some(o => o.rareza === r.v)), 'Todas');
+  $('#fCategoria').innerHTML = opciones([...new Set(OBJETOS.map(o => o.categoria))].sort((a, b) => a.localeCompare(b, 'es')), 'Todas');
+  aplicarFiltrosAlFormulario();
+  resumenFiltros();
+
+  $('#fBuscar').addEventListener('input', e => { filtros.texto = e.target.value; filtrosCambiados(); });
+  $('#fMapa').addEventListener('change', e => { filtros.mapa = e.target.value; rellenarTipos(); filtrosCambiados(); });
+  $('#fTipo').addEventListener('change', e => { filtros.tipo = Number(e.target.value) || 0; rellenarPrecios(); filtrosCambiados(); });
+  $('#fPrecio').addEventListener('change', e => { filtros.precio = Number(e.target.value) || 0; filtrosCambiados(); });
+  $('#fRotar').addEventListener('change', e => { filtros.rotar = e.target.checked; filtrosCambiados(); });
+  $('#fRareza').addEventListener('change', e => { filtros.rareza = Number(e.target.value) || 0; filtrosCambiados(); });
+  $('#fCategoria').addEventListener('change', e => { filtros.categoria = e.target.value; filtrosCambiados(); });
+  $('#fValor').addEventListener('change', e => { filtros.valor = e.target.value; filtrosCambiados(); });
+  $('#fFormato').addEventListener('click', e => {
+    const b = e.target.closest('[data-formato]');
+    if (!b) return;
+    filtros.formato = filtros.formato === b.dataset.formato ? '' : b.dataset.formato;
+    pintarFormatos();
+    $(`[data-formato="${b.dataset.formato}"]`).focus();
+    filtrosCambiados();
   });
+  $('#btnRestablecer').addEventListener('click', () => {
+    Object.assign(filtros, { texto: '', ...FILTROS_INICIALES, mapa: '', tipo: 0, precio: 0 });
+    estadoSonido.s = null;
+    aplicarFiltrosAlFormulario();
+    filtrosCambiados();
+    tostada('Filtros restablecidos.');
+  });
+  // En pantallas estrechas el panel empieza plegado
+  if (window.matchMedia('(max-width: 999px)').matches) $('#panelFiltros').open = false;
 }
 
-function htmlObjeto(o, { prob = null, destacado = false, perfil = null } = {}) {
-  const cargas = dondeSale(o.id, perfil);
-  return `<article class="objeto${destacado ? ' top' : ''}">
-    ${htmlIcono(o, 84)}
-    <div>
-      <h4>${esc(o.nombre)} ${destacado ? '<span class="tag-top">Lo más valioso</span>' : ''}</h4>
-      <p class="original">${esc(o.original)}</p>
-      <div class="meta">${htmlRareza(o.rareza)}<span>Tamaño <b class="mono">${esc(o.tamano)}</b></span><span>${esc(o.categoria)}</span></div>
-      <div class="precios"><span>Mercado <b>${fmt(o.mercado)}</b></span><span>Contacto <b>${fmt(o.contacto)}</b></span></div>
-      ${prob !== null ? `<div class="prob" title="Probabilidad dentro de este sonido"><div class="barra-p"><div style="width:${Math.max(1, prob * 100)}%"></div></div><b>${pct(prob)}</b></div>` : ''}
-      ${cargas.length ? `<div class="fuentes" aria-label="Cargas donde sale">${chipsCargas(cargas)}</div>` : ''}
-    </div>
-  </article>`;
+/* =============================================================================
+   SONIDOS (tarjetas con ▶ y miniaturas de los objetos posibles)
+   ========================================================================== */
+const estadoSonido = { s: almacen.leer('sonido', null), orden: almacen.leer('ordenCandidatos', 'prob') };
+
+function pintarSonidos() {
+  const grid = $('#gridSonidos');
+  const { lista } = filtrados();
+  grid.innerHTML = Array.from({ length: NUM_SONIDOS }, (_, i) => {
+    const s = i + 1;
+    const objs = lista.filter(o => o.sonido === s).sort((a, b) => valorDe(b) - valorDe(a));
+    const elegido = s === estadoSonido.s;
+    const clases = ['tarjeta-sonido', elegido && 'elegida', !objs.length && 'vacia', objs.length === 1 && 'segura'].filter(Boolean).join(' ');
+    const resto = objs.length - MINIATURAS_POR_SONIDO;
+    const minis = objs.slice(0, resto > 0 ? MINIATURAS_POR_SONIDO - 1 : MINIATURAS_POR_SONIDO).map(o => htmlIcono(o, 48, 'miniatura')).join('')
+      + (resto > 0 ? `<span class="mas" title="${resto + 1} objetos más">+${resto + 1}</span>` : '');
+    const rango = !objs.length ? '' : objs.length === 1 ? fmtCorto(valorDe(objs[0])) : `${fmtCorto(valorDe(objs[objs.length - 1]))} – ${fmtCorto(valorDe(objs[0]))}`;
+    return `<div class="${clases}" data-s="${s}">
+      <div class="ts-cab">
+        <button class="ts-id" aria-pressed="${elegido}" tabindex="${elegido || (!estadoSonido.s && s === 1) ? 0 : -1}" aria-label="Sonido ${s}: ${objs.length ? objs.length + (objs.length === 1 ? ' objeto' : ' objetos') : 'ningún objeto con estos filtros'}">ID: ${s}</button>
+        <button class="ts-play" data-play="${s}" aria-label="Escuchar el sonido ${s} al coger">▶ Coger</button>
+      </div>
+      <div class="ts-objs">${minis || '<span class="credito">Ningún objeto con estos filtros</span>'}</div>
+      ${objs.length ? `<div class="ts-pie"><span>${objs.length} ${objs.length === 1 ? 'objeto' : 'objetos'}</span><b>${rango}</b></div>` : ''}
+    </div>`;
+  }).join('');
 }
 
-function pintarResultado() {
-  const caja = $('#resultadoSonido');
-  const s = estadoSonido.s;
-  $('#btnRepetir').disabled = !s;
-  if (!s) {
-    $('#tituloResultado').textContent = 'Elige un sonido';
-    caja.innerHTML = '<p class="vacio">Pulsa un sonido para oírlo y ver qué objetos lo hacen.</p>';
-    return;
-  }
-  $('#tituloResultado').textContent = `Sonido ${s}`;
-  const perfil = perfilActual();
-  const { dist, ids } = posiblesEscenario();
-  const todos = OBJETOS.filter(o => o.sonido === s);
-  let lista = todos.filter(o => ids.has(o.id));
-  if (!lista.length) {
-    caja.innerHTML = `<p class="vacio">El sonido ${s} no sale en ${ajustes.tipo && ajustes.precio ? `${esc(nombreTipo(ajustes.tipo))} de ${fmt(ajustes.precio)}` : 'este escenario'}. ¿Has elegido bien la carga? Con otras cargas puede ser: ${todos.map(o => esc(o.nombre)).join(', ') || '—'}.</p>`;
-    return;
-  }
-  // Probabilidad condicionada: entre los objetos de esta carga que hacen este sonido
-  const pSonido = dist ? lista.reduce((t, o) => t + (dist.get(o.id) || 0), 0) : null;
-  const probDe = o => (dist && pSonido ? (dist.get(o.id) || 0) / pSonido : null);
-  const ord = {
-    'prob': (a, b) => (probDe(b) ?? 0) - (probDe(a) ?? 0) || valorDe(b) - valorDe(a),
-    'valor-desc': (a, b) => valorDe(b) - valorDe(a),
-    'valor-asc': (a, b) => valorDe(a) - valorDe(b),
-    'rareza': (a, b) => b.rareza - a.rareza || valorDe(b) - valorDe(a)
-  }[estadoSonido.orden] || ((a, b) => valorDe(b) - valorDe(a));
-  lista = [...lista].sort(ord);
-  const valores = lista.map(valorDe);
-  const min = Math.min(...valores), max = Math.max(...valores);
-  const top = lista.reduce((a, b) => (valorDe(b) > valorDe(a) ? b : a));
-  let resumen;
-  if (lista.length === 1) resumen = `<p><span class="sello-seguro">✓ Identificación segura</span> Solo puede ser <strong>${esc(lista[0].nombre)}</strong>: <b>${fmt(min)} Koen</b>.</p>`;
-  else resumen = `<p>Este sonido puede ser desde <b>${fmt(min)} Koen</b> hasta <b>${fmt(max)} Koen</b> (${lista.length} objetos).</p>`;
-  if (dist && pSonido) {
-    const esperado = lista.reduce((t, o) => t + probDe(o) * valorDe(o), 0);
-    const neto = esperado - ajustes.precio;
-    resumen += `<p>En ${esc(nombreTipo(ajustes.tipo))} de ${fmt(ajustes.precio)} este sonido sale el <b>${pct(pSonido)}</b> de las veces. Valor esperado con este sonido: <b>${fmt(esperado)}</b> <span class="${neto >= 0 ? 'positivo' : 'negativo'} mono">(${signo(neto)} frente a lo pagado)</span>.</p>`;
-  } else {
-    resumen += '<p class="credito">Elige tipo de carga y precio para ver probabilidades.</p>';
-  }
-  caja.innerHTML = `<div class="rango">${resumen}</div><div class="lista-objetos">${lista.map(o => htmlObjeto(o, { prob: probDe(o), destacado: lista.length > 1 && o === top, perfil })).join('')}</div>`
-    + `<p class="credito" style="margin-top:10px">Valorado con precio de ${ajustes.valor}. Precios y probabilidades: datos v${esc(DATOS.version)} <span class="etiqueta-verificar">verificar en el juego</span></p>`;
-}
-
-function elegirSonido(s, { enfocar = false, desplazar = false, sonarAhora = $('#autoSonar').checked } = {}) {
+function elegirSonido(s, { enfocar = false, desplazar = false } = {}) {
   estadoSonido.s = s;
   almacen.guardar('sonido', s);
-  pintarRejilla();
-  pintarResultado();
-  if (sonarAhora) sonar(s);
-  if (enfocar) $(`.sonido-btn[data-s="${s}"]`)?.focus();
-  if (desplazar) document.getElementById('sonido').scrollIntoView();
+  pintarSonidos();
+  pintarCandidatos();
+  if (s && $('#autoSonar').checked) sonar(s);
+  if (enfocar && s) $(`.tarjeta-sonido[data-s="${s}"] .ts-id`)?.focus();
+  if (desplazar) document.getElementById('candidatos').scrollIntoView();
 }
 
-function iniciarSonido() {
-  rellenarEscenario();
-  $('#eValor').value = ajustes.valor;
-  $('#eMapa').addEventListener('change', e => { ajustes.mapa = e.target.value; rellenarTipos(); escenarioCambiado(); });
-  $('#eTipo').addEventListener('change', e => { ajustes.tipo = Number(e.target.value); rellenarPrecios(); escenarioCambiado(); });
-  $('#ePrecio').addEventListener('change', e => { ajustes.precio = Number(e.target.value); escenarioCambiado(); });
-  $('#eValor').addEventListener('change', e => { ajustes.valor = e.target.value; escenarioCambiado(); });
-
+function iniciarSonidos() {
   const vol = $('#volumen');
   vol.value = reproductor.volumen;
   $('#volTexto').textContent = reproductor.volumen + ' %';
@@ -1100,53 +895,130 @@ function iniciarSonido() {
     if (reproductor.audio) reproductor.audio.volume = reproductor.volumen / 100;
     almacen.guardar('volumen', reproductor.volumen);
   });
-  $('#autoSonar').checked = almacen.leer('autoSonar', true) !== false;
+  $('#autoSonar').checked = almacen.leer('autoSonar', false) === true;
   $('#autoSonar').addEventListener('change', e => almacen.guardar('autoSonar', e.target.checked));
 
-  $('#ordenSonido').value = estadoSonido.orden;
-  $('#ordenSonido').addEventListener('change', e => { estadoSonido.orden = e.target.value; almacen.guardar('ordenSonido', estadoSonido.orden); pintarResultado(); });
-  $('#btnRepetir').addEventListener('click', () => { if (estadoSonido.s) sonar(estadoSonido.s); });
-
-  // Rejilla: clic, flechas (tabindex itinerante) y número tecleado
-  const rejilla = $('#rejillaSonidos');
-  rejilla.addEventListener('click', e => {
-    const btn = e.target.closest('.sonido-btn');
-    if (!btn) return;
-    const s = Number(btn.dataset.s);
-    if (s === estadoSonido.s) sonar(s); else elegirSonido(s);
+  const grid = $('#gridSonidos');
+  grid.addEventListener('click', e => {
+    const play = e.target.closest('[data-play]');
+    if (play) { sonar(Number(play.dataset.play)); return; }
+    const tarjeta = e.target.closest('.tarjeta-sonido');
+    if (!tarjeta) return;
+    const s = Number(tarjeta.dataset.s);
+    elegirSonido(s === estadoSonido.s ? null : s, { enfocar: true });
   });
+  // Teclado: flechas entre tarjetas y número tecleado
   let tecleado = '', temporizadorTecleo;
-  rejilla.addEventListener('keydown', e => {
-    const btn = e.target.closest('.sonido-btn');
+  grid.addEventListener('keydown', e => {
+    const btn = e.target.closest('.ts-id');
     if (!btn) return;
     if (/^\d$/.test(e.key)) {
       e.preventDefault();
       tecleado += e.key;
       clearTimeout(temporizadorTecleo);
       const n = Number(tecleado);
-      const final = tecleado.length >= 2 || n * 10 > NUM_SONIDOS;
       const aplicar = () => { if (n >= 1 && n <= NUM_SONIDOS) elegirSonido(n, { enfocar: true }); tecleado = ''; };
-      if (final) aplicar(); else temporizadorTecleo = setTimeout(aplicar, 600);
+      if (tecleado.length >= 2 || n * 10 > NUM_SONIDOS) aplicar(); else temporizadorTecleo = setTimeout(aplicar, 600);
       return;
     }
-    const botones = $$('.sonido-btn', rejilla);
+    const botones = $$('.ts-id', grid);
     const i = botones.indexOf(btn);
-    const columnas = botones.filter(b => b.offsetTop === botones[0].offsetTop).length || 1;
-    const salto = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columnas, ArrowUp: -columnas }[e.key];
-    let destino = null;
-    if (salto) destino = botones[Math.min(botones.length - 1, Math.max(0, i + salto))];
-    if (e.key === 'Home') destino = botones[0];
-    if (e.key === 'End') destino = botones[botones.length - 1];
-    if (destino) { e.preventDefault(); elegirSonido(Number(destino.dataset.s), { enfocar: true }); }
+    const cols = botones.filter(b => b.offsetTop === botones[0].offsetTop).length || 1;
+    const salto = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+    if (!salto) return;
+    e.preventDefault();
+    const destino = botones[Math.min(botones.length - 1, Math.max(0, i + salto))];
+    botones.forEach(b => { b.tabIndex = b === destino ? 0 : -1; });
+    destino.focus();
   });
-
-  resumenEscenario();
-  pintarRejilla();
-  pintarResultado();
+  pintarSonidos();
 }
 
 /* =============================================================================
-   02 · ¿QUÉ CARGA COMPRAR?
+   CANDIDATOS
+   ========================================================================== */
+function pintarCandidatos() {
+  const s = estadoSonido.s;
+  const { lista, dist } = filtrados();
+  let cands = s ? lista.filter(o => o.sonido === s) : lista;
+  $('#btnQuitarSonido').hidden = !s;
+  $('#irCandidatos').textContent = `Ver candidatos (${cands.length}) ↓`;
+  actualizarFlotante();
+  $('#tituloCandidatos').innerHTML = `Candidatos <small>(${cands.length})</small>${s ? ` <span class="chip">Sonido ${s}</span>` : ''}`;
+  const perfil = perfilActual();
+  const resumen = $('#resumenCandidatos');
+  if (!cands.length) {
+    resumen.innerHTML = '';
+    const otros = s ? OBJETOS.filter(o => o.sonido === s).map(o => o.nombre) : [];
+    $('#gridCandidatos').innerHTML = `<p class="vacio" style="grid-column:1/-1">Ningún objeto cumple los filtros${s ? ` con el sonido ${s}. Con otras cargas o filtros puede ser: ${esc(otros.join(', '))}` : ''}.</p>`;
+    return;
+  }
+  // Probabilidad de cada candidato, condicionada a los filtros (y al sonido)
+  const masa = dist ? cands.reduce((t, o) => t + (dist.get(o.id) || 0), 0) : 0;
+  const probDe = o => (dist && masa ? (dist.get(o.id) || 0) / masa : null);
+  const cmp = {
+    'prob': (a, b) => (probDe(b) ?? 0) - (probDe(a) ?? 0) || valorDe(b) - valorDe(a),
+    'valor-desc': (a, b) => valorDe(b) - valorDe(a),
+    'valor-asc': (a, b) => valorDe(a) - valorDe(b),
+    'rareza': (a, b) => b.rareza - a.rareza || valorDe(b) - valorDe(a),
+    'nombre': (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
+    'sonido': (a, b) => a.sonido - b.sonido || valorDe(b) - valorDe(a)
+  }[estadoSonido.orden] || ((a, b) => valorDe(b) - valorDe(a));
+  cands = [...cands].sort(cmp);
+  const valores = cands.map(valorDe);
+  const min = Math.min(...valores), max = Math.max(...valores);
+  const top = cands.reduce((a, b) => (valorDe(b) > valorDe(a) ? b : a));
+
+  let html = cands.length === 1
+    ? `<p><span class="sello-seguro">✓ Identificación segura</span> Solo puede ser <strong>${esc(cands[0].nombre)}</strong>: <b>${fmt(min)} Koen</b>.</p>`
+    : `<p>Puede ser desde <b>${fmt(min)} Koen</b> hasta <b>${fmt(max)} Koen</b> (${cands.length} objetos).</p>`;
+  if (dist && masa) {
+    const esperado = cands.reduce((t, o) => t + probDe(o) * valorDe(o), 0);
+    const neto = esperado - filtros.precio;
+    const carga = `${esc(nombreTipo(filtros.tipo))} de ${fmt(filtros.precio)}`;
+    if (masa < 0.9995) html += `<p>En ${carga}, esto sale el <b>${pct(masa)}</b> de las veces.</p>`;
+    html += `<p>Valor esperado: <b>${fmt(esperado)}</b> <span class="${neto >= 0 ? 'positivo' : 'negativo'} mono">(${signo(neto)} frente a los ${fmt(filtros.precio)} de la carga)</span>.</p>`;
+  }
+  resumen.innerHTML = `<div class="rango">${html}</div>`;
+  $('#gridCandidatos').innerHTML = cands.map(o => {
+    const p = probDe(o);
+    return `<article class="objeto${cands.length > 1 && o === top ? ' top' : ''}">
+      ${htmlIcono(o, 72)}
+      <div>
+        <h4>${esc(o.nombre)} ${cands.length > 1 && o === top ? '<span class="tag-top">Lo más valioso</span>' : ''}</h4>
+        <p class="original">${esc(o.original)}</p>
+        <div class="meta">${htmlRareza(o.rareza)}<span class="mono">${esc(o.tamano)}</span><span>${esc(o.categoria)}</span><button class="btn-son" data-play="${o.sonido}" aria-label="Escuchar el sonido ${o.sonido}">▶ ${o.sonido}</button></div>
+        <div class="precios"><span>Mercado <b>${fmt(o.mercado)}</b></span><span>Contacto <b>${fmt(o.contacto)}</b></span></div>
+        ${p !== null ? `<div class="prob" title="Probabilidad entre estos candidatos"><div class="barra-p"><div style="width:${Math.max(1, p * 100)}%"></div></div><b>${pct(p)}</b></div>` : ''}
+        <div class="fuentes" aria-label="Cargas donde sale">${chipsCargas(dondeSale(o.id, perfil))}</div>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+/** Botón flotante "Ver candidatos": solo con un sonido elegido y si los candidatos no se ven. */
+let candidatosVisibles = false;
+function actualizarFlotante() {
+  $('#irCandidatos').hidden = !estadoSonido.s || candidatosVisibles;
+}
+
+function iniciarCandidatos() {
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([en]) => { candidatosVisibles = en.isIntersecting; actualizarFlotante(); })
+      .observe(document.getElementById('candidatos'));
+  }
+  $('#ordenCandidatos').value = estadoSonido.orden;
+  $('#ordenCandidatos').addEventListener('change', e => { estadoSonido.orden = e.target.value; almacen.guardar('ordenCandidatos', e.target.value); pintarCandidatos(); });
+  $('#btnQuitarSonido').addEventListener('click', () => elegirSonido(null));
+  $('#gridCandidatos').addEventListener('click', e => {
+    const b = e.target.closest('[data-play]');
+    if (b) sonar(Number(b.dataset.play));
+  });
+  pintarCandidatos();
+}
+
+/* =============================================================================
+   ¿QUÉ CARGA COMPRAR?
    ========================================================================== */
 function pintarCargas() {
   const perfil = perfilActual();
@@ -1171,12 +1043,11 @@ function pintarCargas() {
     });
     return { ...g, frecuencia: g.peso / pesoTotal, esperado, beneficio: esperado - g.precio, ganar, mejor, n: dist.size };
   });
-  const orden = $('#ordenCargas').value;
-  const cmp = { beneficio: (a, b) => b.beneficio - a.beneficio, ganar: (a, b) => b.ganar - a.ganar, precio: (a, b) => a.precio - b.precio, frecuencia: (a, b) => b.frecuencia - a.frecuencia }[orden];
+  const cmp = { beneficio: (a, b) => b.beneficio - a.beneficio, ganar: (a, b) => b.ganar - a.ganar, precio: (a, b) => a.precio - b.precio, frecuencia: (a, b) => b.frecuencia - a.frecuencia }[$('#ordenCargas').value];
   filas.sort(cmp);
-  $('#resumenCargas').textContent = `${ajustes.mapa || 'Todos los mapas'} · ${filas.length} cargas · valorado con precio de ${ajustes.valor}.`;
+  $('#resumenCargas').textContent = `${filtros.mapa || 'Todos los mapas'} · ${filas.length} cargas · valorado con precio de ${filtros.valor}.`;
   $('#cuerpoCargas').innerHTML = filas.map(f => {
-    const elegida = f.tipo === ajustes.tipo && f.precio === ajustes.precio;
+    const elegida = f.tipo === filtros.tipo && f.precio === filtros.precio;
     return `<tr class="clicable${elegida ? ' elegida' : ''}" data-tipo="${f.tipo}" data-precio="${f.precio}" tabindex="0" aria-label="Usar ${esc(nombreTipo(f.tipo))} de ${fmt(f.precio)}">
       <td data-label="Carga"><strong>${esc(nombreTipo(f.tipo))}</strong> <small class="credito">${f.n} objetos</small></td>
       <td data-label="Precio" class="num mono">${fmt(f.precio)}</td>
@@ -1184,7 +1055,7 @@ function pintarCargas() {
       <td data-label="Valor esperado" class="num mono">${fmt(f.esperado)}</td>
       <td data-label="Beneficio" class="num mono ${f.beneficio >= 0 ? 'positivo' : 'negativo'}"><strong>${signo(f.beneficio)}</strong></td>
       <td data-label="P. de ganar" class="num mono">${pct(f.ganar)}</td>
-      <td data-label="Lo mejor">${f.mejor ? `<span class="fila" style="gap:6px;flex-wrap:nowrap">${htmlIcono(f.mejor.o, 32).replace('class="icono"', 'class="icono" style="width:36px;height:36px;flex:none;--rc: var(--r' + f.mejor.o.rareza + ')"')}<span>${esc(f.mejor.o.nombre)} <small class="credito mono">${fmtCorto(valorDe(f.mejor.o))} · ${pct(f.mejor.p)}</small></span></span>` : '—'}</td>
+      <td data-label="Lo mejor">${f.mejor ? `<span class="fila" style="gap:8px;flex-wrap:nowrap">${htmlIcono(f.mejor.o, 36)}<span>${esc(f.mejor.o.nombre)} <small class="credito mono">${fmtCorto(valorDe(f.mejor.o))} · ${pct(f.mejor.p)}</small></span></span>` : '—'}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="7"><p class="vacio">No hay cargas para este mapa.</p></td></tr>';
 }
@@ -1192,13 +1063,13 @@ function pintarCargas() {
 function iniciarCargas() {
   $('#ordenCargas').addEventListener('change', pintarCargas);
   const usar = tr => {
-    ajustes.tipo = Number(tr.dataset.tipo);
+    filtros.tipo = Number(tr.dataset.tipo);
     rellenarTipos();
-    ajustes.precio = Number(tr.dataset.precio);
+    filtros.precio = Number(tr.dataset.precio);
     rellenarPrecios();
-    escenarioCambiado();
-    document.getElementById('sonido').scrollIntoView();
-    tostada(`Carga elegida: ${nombreTipo(ajustes.tipo)} de ${fmt(ajustes.precio)}.`);
+    filtrosCambiados();
+    document.getElementById('sonidos').scrollIntoView();
+    tostada(`Carga elegida: ${nombreTipo(filtros.tipo)} de ${fmt(filtros.precio)}.`);
   };
   $('#cuerpoCargas').addEventListener('click', e => { const tr = e.target.closest('tr[data-tipo]'); if (tr) usar(tr); });
   $('#cuerpoCargas').addEventListener('keydown', e => {
@@ -1209,78 +1080,7 @@ function iniciarCargas() {
 }
 
 /* =============================================================================
-   03 · TABLA DE OBJETOS
-   ========================================================================== */
-function opciones(lista, todas) {
-  return `<option value="">${todas}</option>` + lista.map(o => typeof o === 'object'
-    ? `<option value="${esc(o.v)}">${esc(o.t)}</option>` : `<option value="${esc(o)}">${esc(o)}</option>`).join('');
-}
-
-function iniciarTabla() {
-  $('#fMapa').innerHTML = opciones(MAPAS.map(m => m.etiqueta), 'Todos');
-  $('#fSonido').innerHTML = opciones(Array.from({ length: NUM_SONIDOS }, (_, i) => ({ v: i + 1, t: `Sonido ${i + 1}` })), 'Todos');
-  $('#fTamano').innerHTML = opciones(TAMANOS, 'Todos');
-  $('#fCategoria').innerHTML = opciones([...new Set(OBJETOS.map(o => o.categoria))].sort((a, b) => a.localeCompare(b, 'es')), 'Todas');
-  $('#fCarga').innerHTML = opciones(Object.entries(DATOS.tipos).map(([k, v]) => ({ v: k, t: v })).sort((a, b) => a.t.localeCompare(b.t, 'es')), 'Todas');
-  $('#fPrecioCarga').innerHTML = opciones([...new Set(REPARTOS.map(r => r.precio))].sort((a, b) => a - b).map(p => ({ v: p, t: fmt(p) })), 'Todos');
-  $('#fRareza').innerHTML = opciones(RAREZAS.slice(1).map((r, i) => ({ v: i + 1, t: r })), 'Todas');
-  $('#filtros').addEventListener('input', pintarTabla);
-  $('#filtros').addEventListener('change', pintarTabla);
-  $('#filtros').addEventListener('reset', () => setTimeout(pintarTabla));
-  $('#cuerpoTabla').addEventListener('click', e => {
-    const b = e.target.closest('[data-ir-sonido]');
-    if (b) elegirSonido(Number(b.dataset.irSonido), { desplazar: true, sonarAhora: true });
-  });
-  pintarTabla();
-}
-
-function pintarTabla() {
-  const q = normal($('#fBuscar').value.trim());
-  const perfil = $('#fMapa').value ? perfilDeMapa($('#fMapa').value) : null;
-  const sonido = Number($('#fSonido').value) || null;
-  const tam = $('#fTamano').value;
-  const girado = tam.split('x').reverse().join('x');
-  const rotar = $('#fRotar').checked;
-  const cat = $('#fCategoria').value;
-  const tipo = Number($('#fCarga').value) || null;
-  const precio = Number($('#fPrecioCarga').value) || null;
-  const rareza = Number($('#fRareza').value) || null;
-  // Objetos que salen con el filtro de mapa/carga/precio
-  const enRepartos = perfil || tipo || precio ? new Set(repartosDe({ perfil, tipo, precio }).flatMap(r => r.objetos.map(([id]) => id))) : null;
-
-  const filas = OBJETOS.filter(o => {
-    if (q && !normal(o.nombre).includes(q) && !normal(o.original).includes(q)) return false;
-    if (sonido && o.sonido !== sonido) return false;
-    if (tam && o.tamano !== tam && !(rotar && o.tamano === girado)) return false;
-    if (cat && o.categoria !== cat) return false;
-    if (rareza && o.rareza !== rareza) return false;
-    if (enRepartos && !enRepartos.has(o.id)) return false;
-    return true;
-  });
-  const orden = $('#fOrden').value;
-  const cmp = {
-    'valor-desc': (a, b) => valorDe(b) - valorDe(a), 'valor-asc': (a, b) => valorDe(a) - valorDe(b),
-    'rareza': (a, b) => b.rareza - a.rareza || valorDe(b) - valorDe(a),
-    'nombre': (a, b) => a.nombre.localeCompare(b.nombre, 'es'), 'sonido': (a, b) => a.sonido - b.sonido || valorDe(b) - valorDe(a)
-  }[orden];
-  filas.sort(cmp);
-
-  $('#contadorTabla').textContent = `${filas.length} ${filas.length === 1 ? 'objeto' : 'objetos'}`;
-  $('#cuerpoTabla').innerHTML = filas.length ? filas.map(o => `<tr>
-      <td data-label="Objeto" class="sin-etiqueta"><div class="celda-obj">${htmlIcono(o, 44)}<span><strong>${esc(o.nombre)}</strong><small>${esc(o.original)}</small></span></div></td>
-      <td data-label="Sonido" class="num"><button class="btn-son" data-ir-sonido="${o.sonido}" aria-label="Oír y ver el sonido ${o.sonido}">▶ ${o.sonido}</button></td>
-      <td data-label="Rareza">${htmlRareza(o.rareza)}</td>
-      <td data-label="Tamaño" class="mono">${esc(o.tamano)}</td>
-      <td data-label="Categoría">${esc(o.categoria)}</td>
-      <td data-label="Mercado" class="num mono">${fmt(o.mercado)}</td>
-      <td data-label="Contacto" class="num mono">${fmt(o.contacto)}</td>
-      <td data-label="Dónde sale"><div class="fuentes">${chipsCargas(dondeSale(o.id, perfil)) || '—'}</div></td>
-    </tr>`).join('')
-    : '<tr><td colspan="8"><p class="vacio">Ningún objeto cumple los filtros.</p></td></tr>';
-}
-
-/* =============================================================================
-   04 · VENDER A LA FURGONETA
+   02 · VENDER A LA FURGONETA
    ========================================================================== */
 const casillasDe = o => o.ancho * o.alto;
 const furgo = (() => {
@@ -1402,518 +1202,6 @@ function iniciarVender() {
 }
 
 /* =============================================================================
-   04 · CAJA SECRETA DE LA ESTACIÓN DE TV
-   ========================================================================== */
-const SEGUNDOS_CAJA = 60;
-const caja = { fin: null, intervalo: null, avisados: new Set() };
-
-function pintarCaja(restante) {
-  const s = Math.ceil(restante);
-  const reloj = $('#relojCaja'), barra = $('#barraCaja');
-  reloj.textContent = s;
-  const nivel = s <= 10 ? 'critico' : s <= 30 ? 'alerta' : '';
-  reloj.className = 'reloj ' + nivel;
-  barra.className = 'barra ' + nivel;
-  $('div', barra).style.width = (restante / SEGUNDOS_CAJA * 100) + '%';
-  barra.setAttribute('aria-valuenow', String(s));
-  barra.setAttribute('aria-valuetext', `${s} segundos`);
-}
-
-function avisoCaja(seg) {
-  const lector = $('#relojCajaLector');
-  const pit = $('#cajaPitidos').checked, vib = $('#cajaVibrar').checked;
-  if (seg === 30) { lector.textContent = 'Quedan 30 segundos'; if (pit) pitar(880, 0.15, 1); if (vib) vibrar(200); }
-  if (seg === 10) { lector.textContent = 'Quedan 10 segundos'; if (pit) pitar(1100, 0.12, 2); if (vib) vibrar([150, 80, 150]); }
-  if (seg === 0) { lector.textContent = 'Caja abierta. ¡A extraer!'; if (pit) pitar(660, 0.35, 3, 0.12); if (vib) vibrar([400, 120, 400, 120, 400]); }
-}
-
-function tickCaja() {
-  const restante = Math.max(0, (caja.fin - performance.now()) / 1000);
-  pintarCaja(restante);
-  [30, 10, 0].forEach(t => { if (restante <= t && !caja.avisados.has(t)) { caja.avisados.add(t); avisoCaja(t); } });
-  if (restante <= 0) { pararCaja(false); $('#btnCaja').textContent = 'Reiniciar'; }
-}
-
-function pararCaja(reiniciarVista = true) {
-  clearInterval(caja.intervalo);
-  caja.intervalo = null;
-  if (reiniciarVista) { pintarCaja(SEGUNDOS_CAJA); $('#btnCaja').textContent = 'Iniciar'; }
-}
-
-function iniciarCaja() {
-  pintarCaja(SEGUNDOS_CAJA);
-  $('#btnCaja').addEventListener('click', () => {
-    obtenerAudioCtx(); // desbloquea el audio con este clic
-    clearInterval(caja.intervalo);
-    caja.fin = performance.now() + SEGUNDOS_CAJA * 1000;
-    caja.avisados = new Set();
-    $('#relojCajaLector').textContent = 'Cuenta atrás iniciada: 60 segundos';
-    caja.intervalo = setInterval(tickCaja, 100);
-    $('#btnCaja').textContent = 'Reiniciar';
-    tickCaja();
-  });
-  $('#btnCajaParar').addEventListener('click', () => pararCaja(true));
-
-  const estado = almacen.leer('cajasTV', {});
-  const revisadas = Array.isArray(estado.revisadas) ? estado.revisadas : [];
-  const notas = Array.isArray(estado.notas) ? estado.notas : [];
-  const guardar = () => almacen.guardar('cajasTV', { revisadas, notas });
-  const pintar = () => {
-    let planta = 0, html = '';
-    CAJAS_TV.forEach((c, i) => {
-      if (c.planta !== planta) { planta = c.planta; html += `<p class="planta">Planta ${planta}</p>`; }
-      html += `<div class="caja-tv${revisadas[i] ? ' hecha' : ''}" data-i="${i}">
-        <input type="checkbox" id="cajaTV${i}" ${revisadas[i] ? 'checked' : ''}>
-        <label for="cajaTV${i}" class="check titulo-caja">${esc(c.nombre)} · planta ${c.planta} — revisada</label>
-        <input type="text" value="${esc(notas[i] || '')}" placeholder="Dónde está (nota)" aria-label="Nota de ubicación de ${esc(c.nombre)}" maxlength="80">
-      </div>`;
-    });
-    $('#cajasTV').innerHTML = html;
-  };
-  pintar();
-  $('#cajasTV').addEventListener('change', e => {
-    const fila = e.target.closest('[data-i]');
-    if (!fila || e.target.type !== 'checkbox') return;
-    revisadas[Number(fila.dataset.i)] = e.target.checked;
-    fila.classList.toggle('hecha', e.target.checked);
-    guardar();
-  });
-  $('#cajasTV').addEventListener('input', e => {
-    const fila = e.target.closest('[data-i]');
-    if (!fila || e.target.type !== 'text') return;
-    notas[Number(fila.dataset.i)] = e.target.value;
-    guardar();
-  });
-  $('#btnCajasReiniciar').addEventListener('click', () => { revisadas.length = 0; guardar(); pintar(); });
-}
-
-/* =============================================================================
-   05 · ANALIZAR: espectrograma en directo + comparación con los 38 sonidos
-   La huella se calcula igual para el micro, un archivo o los sonidos del juego:
-   se decodifica el audio y se analiza con una FFT propia (sin librerías).
-   ========================================================================== */
-const N_FFT = 2048;
-const N_BANDAS = 24;          // bandas logarítmicas de 80 Hz a 12 kHz
-const PASO_S = 0.02;          // un fotograma cada 20 ms
-const MAX_SEGUNDOS = 8;
-const fft = (() => {
-  const bits = Math.log2(N_FFT);
-  const inv = new Uint32Array(N_FFT);
-  for (let i = 0; i < N_FFT; i++) { let x = i, y = 0; for (let b = 0; b < bits; b++) { y = (y << 1) | (x & 1); x >>= 1; } inv[i] = y; }
-  const cos = new Float32Array(N_FFT / 2), sin = new Float32Array(N_FFT / 2);
-  for (let k = 0; k < N_FFT / 2; k++) { cos[k] = Math.cos(-2 * Math.PI * k / N_FFT); sin[k] = Math.sin(-2 * Math.PI * k / N_FFT); }
-  const ventana = Float32Array.from({ length: N_FFT }, (_, i) => 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N_FFT - 1)));
-  const re = new Float32Array(N_FFT), im = new Float32Array(N_FFT);
-  /** Magnitudes del espectro de N_FFT muestras a partir de `inicio`. */
-  return (muestras, inicio) => {
-    im.fill(0);
-    for (let i = 0; i < N_FFT; i++) re[inv[i]] = (muestras[inicio + i] || 0) * ventana[i];
-    for (let tam = 2; tam <= N_FFT; tam <<= 1) {
-      const mitad = tam >> 1, paso = N_FFT / tam;
-      for (let i = 0; i < N_FFT; i += tam) {
-        for (let j = 0; j < mitad; j++) {
-          const wr = cos[j * paso], wi = sin[j * paso], k = i + j, l = k + mitad;
-          const tr = wr * re[l] - wi * im[l], ti = wr * im[l] + wi * re[l];
-          re[l] = re[k] - tr; im[l] = im[k] - ti; re[k] += tr; im[k] += ti;
-        }
-      }
-    }
-    const mag = new Float32Array(N_FFT / 2);
-    for (let i = 0; i < N_FFT / 2; i++) mag[i] = Math.hypot(re[i], im[i]);
-    return mag;
-  };
-})();
-
-/**
- * Huella de un AudioBuffer: forma del espectro medio en 24 bandas (normalizada, no depende
- * del volumen), número de golpes (ataques) y duración audible.
- */
-function huellaDeBuffer(buffer) {
-  const sr = buffer.sampleRate;
-  const largo = Math.min(buffer.length, Math.round(sr * MAX_SEGUNDOS));
-  const mono = new Float32Array(largo);
-  for (let c = 0; c < buffer.numberOfChannels; c++) {
-    const d = buffer.getChannelData(c);
-    for (let i = 0; i < largo; i++) mono[i] += d[i] / buffer.numberOfChannels;
-  }
-  const hop = Math.round(sr * PASO_S), hzPorBin = sr / N_FFT;
-  const fMin = 80, fMax = Math.min(12000, sr / 2 * 0.95);
-  const bordes = Array.from({ length: N_BANDAS + 1 }, (_, i) => fMin * Math.pow(fMax / fMin, i / N_BANDAS));
-  const rangos = bordes.slice(0, -1).map((b, i) => [Math.max(1, Math.floor(b / hzPorBin)), Math.max(Math.floor(b / hzPorBin) + 1, Math.ceil(bordes[i + 1] / hzPorBin))]);
-  const fotos = [];
-  for (let ini = 0; ini + hop <= Math.max(largo, hop); ini += hop) {
-    let s = 0; for (let i = ini; i < Math.min(largo, ini + N_FFT); i++) s += mono[i] * mono[i];
-    const rms = Math.sqrt(s / N_FFT);
-    fotos.push({ ini, rms });
-  }
-  const rmsMax = Math.max(0, ...fotos.map(f => f.rms));
-  if (rmsMax < 0.001) return null;
-  const umbral = Math.max(rmsMax * 0.12, 0.0008);
-  const activos = fotos.filter(f => f.rms >= umbral);
-  if (activos.length < 2) return null;
-  const media = new Array(N_BANDAS).fill(0);
-  activos.forEach(f => {
-    const mag = fft(mono, f.ini);
-    rangos.forEach(([i0, i1], b) => { let s = 0; for (let i = i0; i < i1 && i < mag.length; i++) s += mag[i]; media[b] += s / (i1 - i0); });
-  });
-  const logv = media.map(x => Math.log10(x / activos.length + 1e-9));
-  const m = logv.reduce((a, b) => a + b, 0) / N_BANDAS;
-  const sd = Math.sqrt(logv.reduce((a, b) => a + (b - m) ** 2, 0) / N_BANDAS) || 1;
-  let golpes = 0, ultimo = -99;
-  fotos.forEach((f, i) => {
-    const previos = fotos.slice(Math.max(0, i - 5), i);
-    const base = previos.length ? previos.reduce((s, p) => s + p.rms, 0) / previos.length : 0;
-    if (f.rms >= umbral && f.rms > base * 1.8 + 1e-4 && i - ultimo > 5) { golpes++; ultimo = i; }
-  });
-  return { bandas: logv.map(v => (v - m) / sd), golpes, duracion: activos.length * PASO_S };
-}
-
-function parecido(a, b) {
-  let dot = 0, na = 0, nb = 0;
-  for (let i = 0; i < N_BANDAS; i++) { dot += a.bandas[i] * b.bandas[i]; na += a.bandas[i] ** 2; nb += b.bandas[i] ** 2; }
-  const espectro = ((dot / Math.sqrt(na * nb || 1)) + 1) / 2;
-  const golpes = 1 - Math.abs(a.golpes - b.golpes) / Math.max(a.golpes, b.golpes, 1);
-  const dur = Math.min(a.duracion, b.duracion) / Math.max(a.duracion, b.duracion, 0.01);
-  return 0.7 * espectro + 0.15 * golpes + 0.15 * dur;
-}
-
-const an = { analyser: null, stream: null, fuenteMic: null, buffer: null, bucle: null, mapaY: null, paleta: null, referencias: null };
-
-function prepararAnalyser() {
-  const ctx = obtenerAudioCtx();
-  if (!ctx) throw new Error('Tu navegador no tiene Web Audio.');
-  if (!an.analyser) { an.analyser = ctx.createAnalyser(); an.analyser.fftSize = 2048; an.analyser.smoothingTimeConstant = 0.15; }
-  return ctx;
-}
-
-/** Huellas de los 38 sonidos del juego (se calculan una vez, al primer uso). */
-async function referencias(estado) {
-  if (an.referencias) return an.referencias;
-  const ctx = prepararAnalyser();
-  const lista = [];
-  for (let s = 1; s <= NUM_SONIDOS; s++) {
-    estado.textContent = `Preparando los sonidos del juego… ${s}/${NUM_SONIDOS}`;
-    try {
-      const datos = await fetch(`audio/${s}.ogg`).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); });
-      const h = huellaDeBuffer(await ctx.decodeAudioData(datos));
-      if (h) lista.push({ s, ...h });
-    } catch { /* ese sonido no se pudo leer: se omite */ }
-  }
-  if (!lista.length) throw new Error('No se pudieron leer los sonidos del juego (este navegador no decodifica .ogg o la página se abrió sin servidor).');
-  an.referencias = lista;
-  return lista;
-}
-
-async function alternarMic() {
-  const btn = $('#btnMic');
-  if (an.stream) {
-    an.stream.getTracks().forEach(t => t.stop());
-    an.fuenteMic?.disconnect();
-    an.stream = null; an.fuenteMic = null;
-    btn.setAttribute('aria-pressed', 'false');
-    btn.textContent = '🎙 Activar micrófono';
-    $('#estadoFuente').textContent = an.buffer ? 'Micrófono apagado. Hay un audio cargado.' : 'Sin fuente activa.';
-    return false;
-  }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    $('#estadoFuente').textContent = 'Este navegador no permite el micrófono aquí (hace falta https o localhost).';
-    return false;
-  }
-  try {
-    const ctx = prepararAnalyser();
-    an.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    an.fuenteMic = ctx.createMediaStreamSource(an.stream);
-    an.fuenteMic.connect(an.analyser); // no va a los altavoces: sin acoples
-    btn.setAttribute('aria-pressed', 'true');
-    btn.textContent = '■ Apagar micrófono';
-    $('#estadoFuente').textContent = 'Micrófono activo. Solo se analiza aquí, no se envía nada.';
-    arrancarDibujo();
-    return true;
-  } catch (err) {
-    $('#estadoFuente').textContent = 'No se pudo usar el micrófono: ' + (err.name === 'NotAllowedError' ? 'permiso denegado.' : err.message);
-    return false;
-  }
-}
-
-/** Graba el micro unos segundos y devuelve el AudioBuffer. */
-function grabarMic(segundos) {
-  return new Promise((res, rej) => {
-    if (typeof MediaRecorder === 'undefined') { rej(new Error('Este navegador no puede grabar el micrófono.')); return; }
-    const trozos = [];
-    const rec = new MediaRecorder(an.stream);
-    rec.ondataavailable = e => { if (e.data.size) trozos.push(e.data); };
-    rec.onstop = async () => {
-      try { res(await obtenerAudioCtx().decodeAudioData(await new Blob(trozos, { type: rec.mimeType }).arrayBuffer())); }
-      catch { rej(new Error('No se pudo leer la grabación.')); }
-    };
-    rec.start();
-    setTimeout(() => rec.state !== 'inactive' && rec.stop(), segundos * 1000);
-  });
-}
-
-async function compararBuffer(buffer, estado) {
-  const lista = $('#coincidencias');
-  const refs = await referencias(estado);
-  const h = huellaDeBuffer(buffer);
-  if (!h) { estado.textContent = 'No se oyó nada claro. Sube el volumen o acerca el micro.'; lista.innerHTML = ''; return; }
-  let candidatos = refs;
-  if ($('#anSoloPosibles').checked) {
-    const { ids } = posiblesEscenario();
-    const posibles = new Set(OBJETOS.filter(o => ids.has(o.id)).map(o => o.sonido));
-    if (posibles.size) candidatos = refs.filter(r => posibles.has(r.s));
-  }
-  const top = candidatos.map(r => ({ s: r.s, p: parecido(h, r) })).sort((a, b) => b.p - a.p).slice(0, 3);
-  lista.innerHTML = top.map(({ s, p }) => {
-    const nombres = OBJETOS.filter(o => o.sonido === s).sort((a, b) => valorDe(b) - valorDe(a)).slice(0, 4).map(o => o.nombre).join(', ');
-    return `<li><span><button class="btn-son" data-ir-sonido="${s}">▶ ${s}</button> ${esc(nombres)}</span><span class="pct">${Math.round(p * 100)} %</span><div class="barrita"><div style="width:${Math.round(p * 100)}%"></div></div></li>`;
-  }).join('');
-  estado.textContent = `Lo más parecido: sonido ${top[0].s} (aproximado). Pulsa ▶ para comparar de oído.`;
-}
-
-async function escuchar() {
-  const estado = $('#estadoAnalisis');
-  const btn = $('#btnEscuchar');
-  try {
-    if (!an.stream && !(await alternarMic())) { estado.textContent = 'Hace falta el micrófono.'; return; }
-    btn.disabled = true;
-    await referencias(estado);
-    const seg = Number($('#anSegundos').value);
-    estado.textContent = `Escuchando ${seg} s… coge el objeto ahora.`;
-    const buffer = await grabarMic(seg);
-    estado.textContent = 'Comparando…';
-    await compararBuffer(buffer, estado);
-  } catch (err) { estado.textContent = err.message; } finally { btn.disabled = false; }
-}
-
-async function cargarAudio(archivo) {
-  try {
-    const ctx = prepararAnalyser();
-    an.buffer = await ctx.decodeAudioData(await archivo.arrayBuffer());
-    $('#btnAnalizarArchivo').disabled = false;
-    $('#estadoFuente').textContent = `Audio cargado: ${archivo.name} (${an.buffer.duration.toFixed(1)} s).`;
-    // Se reproduce por el espectrograma para verlo
-    const src = ctx.createBufferSource();
-    src.buffer = an.buffer;
-    src.connect(an.analyser); src.connect(ctx.destination);
-    an.reproduciendo = true; arrancarDibujo();
-    src.onended = () => { an.reproduciendo = false; };
-    src.start();
-  } catch { $('#estadoFuente').textContent = 'No se pudo leer ese audio. Prueba con mp3, wav u ogg.'; }
-}
-
-/* --- Espectrograma en directo --- */
-function prepararLienzo() {
-  const cv = $('#espectrograma');
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
-  if (w && h && (cv.width !== w || cv.height !== h)) {
-    cv.width = w; cv.height = h;
-    const g = cv.getContext('2d'); g.fillStyle = '#0d0f10'; g.fillRect(0, 0, w, h);
-    an.mapaY = null;
-  }
-  return cv;
-}
-function paleta() {
-  if (an.paleta) return an.paleta;
-  const paradas = [[0, [13, 15, 16]], [70, [30, 48, 22]], [140, [110, 140, 50]], [200, [255, 122, 26]], [255, [255, 243, 224]]];
-  an.paleta = Array.from({ length: 256 }, (_, v) => {
-    let i = 0; while (i < paradas.length - 2 && v > paradas[i + 1][0]) i++;
-    const [v0, c0] = paradas[i], [v1, c1] = paradas[i + 1];
-    const t = (v - v0) / (v1 - v0);
-    return c0.map((c, k) => Math.round(c + (c1[k] - c) * t));
-  });
-  return an.paleta;
-}
-function arrancarDibujo() {
-  if (an.bucle) return;
-  const datos = new Uint8Array(an.analyser.frequencyBinCount);
-  const tiempo = new Float32Array(an.analyser.fftSize);
-  const COL = 2;
-  const pintar = () => {
-    if (!an.stream && !an.reproduciendo) { an.bucle = null; $('#medidorBarra').style.width = '0'; $('#medidorTexto').textContent = '— dB'; return; }
-    const cv = prepararLienzo(), g = cv.getContext('2d'), h = cv.height;
-    if (!an.mapaY) {
-      const sr = audioCtx.sampleRate, hzPorBin = sr / an.analyser.fftSize, fMax = Math.min(12000, sr / 2);
-      an.mapaY = Array.from({ length: h }, (_, y) => Math.min(datos.length - 1, Math.round(40 * Math.pow(fMax / 40, 1 - y / (h - 1)) / hzPorBin)));
-    }
-    an.analyser.getByteFrequencyData(datos);
-    g.drawImage(cv, -COL, 0);
-    const col = g.createImageData(COL, h), pal = paleta();
-    for (let y = 0; y < h; y++) {
-      const c = pal[datos[an.mapaY[y]]];
-      for (let x = 0; x < COL; x++) { const k = (y * COL + x) * 4; col.data[k] = c[0]; col.data[k + 1] = c[1]; col.data[k + 2] = c[2]; col.data[k + 3] = 255; }
-    }
-    g.putImageData(col, cv.width - COL, 0);
-    an.analyser.getFloatTimeDomainData(tiempo);
-    let suma = 0; for (const v of tiempo) suma += v * v;
-    const db = 20 * Math.log10(Math.sqrt(suma / tiempo.length) + 1e-9);
-    $('#medidorBarra').style.width = Math.max(0, Math.min(100, (db + 60) / 60 * 100)) + '%';
-    $('#medidorTexto').textContent = (db < -90 ? '-∞' : db.toFixed(0)) + ' dB';
-    an.bucle = requestAnimationFrame(pintar);
-  };
-  an.bucle = requestAnimationFrame(pintar);
-}
-
-function iniciarAnalizador() {
-  prepararLienzo();
-  window.addEventListener('resize', () => { an.mapaY = null; prepararLienzo(); });
-  $('#btnMic').addEventListener('click', alternarMic);
-  $('#archivoAnalisis').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) cargarAudio(f); });
-  $('#btnEscuchar').addEventListener('click', escuchar);
-  $('#btnAnalizarArchivo').addEventListener('click', async () => {
-    const estado = $('#estadoAnalisis');
-    if (!an.buffer) return;
-    try { await compararBuffer(an.buffer, estado); } catch (err) { estado.textContent = err.message; }
-  });
-  $('#coincidencias').addEventListener('click', e => {
-    const b = e.target.closest('[data-ir-sonido]');
-    if (b) elegirSonido(Number(b.dataset.irSonido), { sonarAhora: true });
-  });
-}
-
-/* =============================================================================
-   07 · RAID: CHECKLIST + TEMPORIZADOR + BENEFICIO
-   ========================================================================== */
-const raid = (() => {
-  const d = almacen.leer('raidTimer', {});
-  return { minutos: Number(d.minutos) > 0 ? Number(d.minutos) : 30, fin: Number(d.fin) || null, restante: Number(d.restante) || null, avisados: new Set(), intervalo: null };
-})();
-const guardarRaid = () => almacen.guardar('raidTimer', { minutos: raid.minutos, fin: raid.fin, restante: raid.restante });
-const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
-
-function tickRaid() {
-  const ms = raid.fin ? raid.fin - Date.now() : raid.restante ?? raid.minutos * 60000;
-  const reloj = $('#relojRaid');
-  reloj.textContent = mmss(ms);
-  reloj.classList.toggle('alerta', ms <= 300000 && ms > 60000);
-  reloj.classList.toggle('critico', ms <= 60000);
-  if (!raid.fin) return;
-  [[300000, '5 minutos', () => pitar(880, 0.15, 1)], [60000, '1 minuto', () => pitar(1100, 0.12, 2)], [0, 'fin del tiempo', () => pitar(660, 0.35, 3, 0.12)]]
-    .forEach(([lim, txt, fn]) => {
-      if (ms <= lim && !raid.avisados.has(lim)) {
-        raid.avisados.add(lim);
-        if (ms > lim - 5000) { fn(); vibrar(200); $('#relojRaidLector').textContent = 'Aviso: ' + txt; }
-      }
-    });
-  if (ms <= 0) { raid.fin = null; raid.restante = 0; guardarRaid(); clearInterval(raid.intervalo); raid.intervalo = null; actualizarBotonesRaid(); }
-}
-function actualizarBotonesRaid() {
-  $('#btnRaidIniciar').disabled = !!raid.fin;
-  $('#btnRaidPausa').disabled = !raid.fin;
-  $('#btnRaidIniciar').textContent = raid.restante && raid.restante < raid.minutos * 60000 ? 'Seguir' : 'Iniciar';
-}
-
-function iniciarRaid() {
-  $('#raidMinutos').value = raid.minutos;
-  $('#raidMinutos').addEventListener('change', e => {
-    const v = Number(e.target.value);
-    if (v > 0) { raid.minutos = v; if (!raid.fin) raid.restante = null; guardarRaid(); tickRaid(); actualizarBotonesRaid(); }
-  });
-  const arrancar = () => { clearInterval(raid.intervalo); raid.intervalo = setInterval(tickRaid, 250); };
-  $('#btnRaidIniciar').addEventListener('click', () => {
-    obtenerAudioCtx();
-    const ms = raid.restante > 0 ? raid.restante : raid.minutos * 60000;
-    raid.fin = Date.now() + ms; raid.restante = null;
-    raid.avisados = new Set([300000, 60000, 0].filter(l => ms <= l));
-    guardarRaid(); arrancar(); tickRaid(); actualizarBotonesRaid();
-    $('#relojRaidLector').textContent = 'Temporizador en marcha';
-  });
-  $('#btnRaidPausa').addEventListener('click', () => {
-    if (!raid.fin) return;
-    raid.restante = raid.fin - Date.now(); raid.fin = null;
-    clearInterval(raid.intervalo); guardarRaid(); tickRaid(); actualizarBotonesRaid();
-    $('#relojRaidLector').textContent = 'En pausa';
-  });
-  $('#btnRaidReiniciar').addEventListener('click', () => {
-    raid.fin = null; raid.restante = null; clearInterval(raid.intervalo);
-    guardarRaid(); tickRaid(); actualizarBotonesRaid();
-  });
-  if (raid.fin) { raid.avisados = new Set([300000, 60000, 0].filter(l => raid.fin - Date.now() <= l)); arrancar(); }
-  tickRaid(); actualizarBotonesRaid();
-
-  const guardada = almacen.leer('checklist', null);
-  let pasos = Array.isArray(guardada) ? guardada.filter(p => p && typeof p.texto === 'string') : CHECKLIST_BASE.map(t => ({ texto: t, hecho: false }));
-  const guardar = () => almacen.guardar('checklist', pasos);
-  const pintar = () => {
-    $('#checklist').innerHTML = pasos.map((p, i) => `<li class="${p.hecho ? 'hecho' : ''}" data-i="${i}">
-      <label class="check"><input type="checkbox" ${p.hecho ? 'checked' : ''}><span class="txt">${esc(p.texto)}</span></label>
-      <button class="pequeno" data-quitar aria-label="Quitar «${esc(p.texto)}»">✕</button></li>`).join('') || '<li style="padding:10px 0">Lista vacía.</li>';
-  };
-  pintar();
-  $('#checklist').addEventListener('change', e => {
-    const li = e.target.closest('[data-i]');
-    pasos[Number(li.dataset.i)].hecho = e.target.checked;
-    li.classList.toggle('hecho', e.target.checked);
-    guardar();
-  });
-  $('#checklist').addEventListener('click', e => {
-    if (!e.target.closest('[data-quitar]')) return;
-    pasos.splice(Number(e.target.closest('[data-i]').dataset.i), 1);
-    guardar(); pintar();
-  });
-  $('#formChecklist').addEventListener('submit', e => {
-    e.preventDefault();
-    const t = $('#nuevoPaso').value.trim();
-    if (!t) return;
-    pasos.push({ texto: t, hecho: false });
-    $('#nuevoPaso').value = '';
-    guardar(); pintar();
-  });
-  $('#btnDesmarcar').addEventListener('click', () => { pasos = pasos.map(p => ({ ...p, hecho: false })); guardar(); pintar(); });
-
-  iniciarBeneficio();
-}
-
-function iniciarBeneficio() {
-  const mapas = [...new Set(MAPAS.filter(m => !m.etiqueta.startsWith('Perfil')).map(m => m.etiqueta.split(' · ')[0]))].sort((a, b) => a.localeCompare(b, 'es'));
-  $('#bMapa').innerHTML = '<option value="">Sin indicar</option>' + mapas.map(m => `<option>${esc(m)}</option>`).join('');
-  let historial = almacen.leer('historial', []);
-  if (!Array.isArray(historial)) historial = [];
-  const num = id => Math.max(0, Number($(id).value) || 0);
-  const calc = () => {
-    const coste = num('#bCoste'), ingresos = num('#bLoot') + num('#bFurgo');
-    const r = $('#bResultado');
-    if (!coste && !ingresos) { r.className = 'resultado-raid'; r.textContent = 'Introduce coste y botín.'; return null; }
-    const neto = ingresos - coste;
-    r.className = 'resultado-raid ' + (neto >= 0 ? 'pos' : 'neg');
-    r.innerHTML = `<div class="dato-grande">${signo(neto)}</div>${neto >= 0 ? 'Beneficio' : 'Pérdida'} · ingresos ${fmt(ingresos)} − equipo ${fmt(coste)}`;
-    return { coste, ingresos, neto };
-  };
-  const pintarHist = () => {
-    $('#cuerpoHistorial').innerHTML = historial.length ? historial.map(h => `<tr>
-      <td data-label="Fecha">${new Date(h.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })} ${new Date(h.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
-      <td data-label="Mapa">${esc(h.mapa || '—')}</td>
-      <td data-label="Coste" class="num mono">${fmt(h.coste)}</td>
-      <td data-label="Ingresos" class="num mono">${fmt(h.ingresos)}</td>
-      <td data-label="Neto" class="num mono ${h.neto >= 0 ? 'positivo' : 'negativo'}">${signo(h.neto)}</td></tr>`).join('')
-      : '<tr><td colspan="5"><p class="vacio">Aún no has guardado raids.</p></td></tr>';
-    if (historial.length) {
-      const media = historial.reduce((s, h) => s + h.neto, 0) / historial.length;
-      $('#hMedia').textContent = signo(media);
-      $('#hMedia').className = media >= 0 ? 'positivo' : 'negativo';
-      $('#hGanadas').textContent = `${historial.filter(h => h.neto >= 0).length} de ${historial.length}`;
-    } else { $('#hMedia').textContent = '—'; $('#hMedia').className = ''; $('#hGanadas').textContent = '—'; }
-  };
-  ['#bCoste', '#bLoot', '#bFurgo'].forEach(id => $(id).addEventListener('input', calc));
-  $('#btnGuardarRaid').addEventListener('click', () => {
-    const r = calc();
-    if (!r) { tostada('Introduce coste y botín.'); return; }
-    historial.unshift({ fecha: Date.now(), mapa: $('#bMapa').value, ...r });
-    historial = historial.slice(0, 10);
-    almacen.guardar('historial', historial);
-    pintarHist();
-    ['#bCoste', '#bLoot', '#bFurgo'].forEach(id => { $(id).value = ''; });
-    calc();
-    tostada('Raid guardada.');
-  });
-  $('#btnBorrarHistorial').addEventListener('click', () => {
-    if (!historial.length || !confirm('¿Borrar el historial de raids?')) return;
-    historial = []; almacen.guardar('historial', historial); pintarHist();
-  });
-  pintarHist();
-}
-
-/* =============================================================================
    MENÚ, TEMA Y ARRANQUE
    ========================================================================== */
 function iniciarMenu() {
@@ -1932,7 +1220,7 @@ function iniciarMenu() {
     const obs = new IntersectionObserver(entradas => {
       entradas.forEach(en => { if (en.isIntersecting) enlaces.forEach(a => a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + en.target.id))); });
     }, { rootMargin: '-40% 0px -55% 0px' });
-    $$('main .seccion').forEach(s => obs.observe(s));
+    ['sonidos', 'candidatos', 'comprar', 'vender'].forEach(id => obs.observe(document.getElementById(id)));
   }
 }
 
@@ -1951,16 +1239,13 @@ function iniciarTema() {
   });
 }
 
-$('#versionDatos').textContent = `${DATOS.version} (${DATOS.fecha})`;
 iniciarTema();
 iniciarMenu();
-iniciarSonido();
+iniciarFiltros();
+iniciarSonidos();
+iniciarCandidatos();
 iniciarCargas();
-iniciarTabla();
 iniciarVender();
-iniciarCaja();
-iniciarAnalizador();
-iniciarRaid();
 </script>
 </body>
 </html>
