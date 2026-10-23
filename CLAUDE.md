@@ -1,56 +1,61 @@
 # CLAUDE.md — Mi ayuda de Arena Breakout
 
-Web personal de fans (no oficial) para Arena Breakout: Infinite: identificar por su ID de sonido lo que dan el Comerciante de campo ("la furgoneta") y las cajas misteriosas, calculadoras, caja secreta de TV Station y raids.
+Web personal de fans (no oficial), toda en español y a pantalla completa, para Arena Breakout: Infinite: calculadora de la furgoneta (Comerciante de campo) con probabilidades reales por mapa, identificar objetos por los 38 sonidos del juego, caja secreta de la Estación de TV y raids.
 
 ## Stack
 
-- Un único `index.html`: HTML + CSS + JS sin dependencias, sin peticiones externas, funciona offline
-- Web Audio API (pitidos, AnalyserNode), IndexedDB (audios propios), localStorage (resto, prefijo `abiAyuda:`)
+- `index.html` único: HTML + CSS + JS sin dependencias, sin peticiones a otros sitios, funciona offline
+- Datos del juego incrustados en `index.html` (bloque `DATOS`), generados con `scripts/generar-datos.mjs`
+- `audio/1.ogg … 38.ogg` (sonido al coger) e `img/<id>.png` (189 objetos), copiados al proyecto
+- Web Audio API (pitidos, AnalyserNode, FFT propia para huellas), MediaRecorder (micro), localStorage (prefijo `abiAyuda:`)
 - Hosting: Cloudflare Pages, proyecto `arena-abi` (subida directa con wrangler)
 
 ## Arquitectura
 
 ```
-index.html   <style> con tokens en :root (oscuro por defecto: carbón/verde militar/naranja; claro con data-theme="claro")
-             → 7 secciones numeradas → <script> con DATOS EDITABLES arriba:
-             SONIDOS_EJEMPLO, NUM_IDS, CARGAS, PRECIOS_CARGA, RAREZAS, TAMANOS, MAPAS, MODOS, MIS_SONIDOS, CAJAS_TV, CHECKLIST_BASE
-audio/       aquí van los audios propios (extraccion.mp3, pasos.mp3, disparos-lejanos.mp3). No audios del juego.
-README.md    qué es y cómo desplegar
+index.html                 tokens CSS (oscuro por defecto; claro con data-theme="claro") → 6 secciones → <script>
+                           bloque /* DATOS:INICIO … DATOS:FIN */ generado, luego configuración editable y módulos
+datos/fuente.json          tablas del juego (items, pools, profiles, types, sounds) tal cual las publica la comunidad
+datos/traducciones.json    nombres en español de objetos, categorías, cargas, mapas y modos
+scripts/generar-datos.mjs  fuente + traducciones → bloque DATOS de index.html (avisa si falta una traducción)
+audio/  img/               sonidos e imágenes del juego
 ```
 
-Secciones: 01 sonido (rejilla 1-38, pestañas coger/soltar, rango min-máx, "identificación segura") · 02 tabla con filtros ·
-03 furgoneta (lista, % venta, orden por moneda/casilla, valor esperado de cajas misteriosas con pesos) · 04 caja secreta 60 s +
-5 cajas gratuitas · 05 mis sonidos · 06 analizador (espectrograma, huellas calibradas) · 07 checklist + temporizador + beneficio.
+Secciones: 01 calculadora de la furgoneta (mapa/modo, tipo y precio de carga, «valorar con» mercado/contacto;
+tabla «¿qué carga comprar?» con valor esperado, beneficio y P. de ganar; vender: lista, % venta, orden por moneda/casilla)
+· 02 sonido (38 botones que suenan; objetos posibles con probabilidad condicionada al sonido) · 03 tabla de objetos
+· 04 caja secreta 60 s + 5 cajas gratuitas · 05 analizar (micro/archivo vs. los 38 sonidos) · 06 checklist, temporizador y beneficio.
+
+Modelo: un **perfil** de reparto agrupa varios mapa·modo (p. ej. perfil 4 = Estación de TV · Confinamiento, Northridge,
+Aeropuerto · Confinamiento). Un **reparto** = [perfil, tipo de carga, precio, peso, total, [[id, peso]]]. Puede haber
+varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según su peso.
 
 ## Comandos
 
-- Ver en local: doble clic en `index.html`, o preview `arena` de `.claude/launch.json` (puerto 8766). El micrófono necesita https o localhost.
+- Ver en local: preview `arena` de `.claude/launch.json` (puerto 8766). Abrir con doble clic no sirve para el analizador (fetch de los .ogg) y el micro necesita https o localhost.
+- Regenerar datos tras un parche: sustituir `datos/fuente.json` y `node scripts/generar-datos.mjs` (desde `Arena/`).
 - Desplegar: `npx wrangler pages deploy . --project-name arena-abi --branch main` (desde `Arena/`).
 - Repo: https://github.com/AleexX26/arena (rama `main`). Web: https://arena-abi.pages.dev
 - Ojo: Pages no está conectado a Git: un push NO publica, hay que repetir el `wrangler pages deploy`.
 
-## Formato de datos (Importar JSON)
-
-`[{ id, items: [{ nombre, rareza (1-6 o nombre), tamano "2x1", tipo, precio, fuentes: [{ cargo, precio }], imagen?, mapas?: ["TV Station Lockdown"], eventos?: ["coger","soltar"] }] }]`.
-Sin `eventos` = el objeto suena igual al coger y al soltar. Sin `mapas` = aparece con cualquier filtro de mapa.
-
 ## Decisiones
 
-- 2026-10-23: datos de ejemplo (IDs 1, 4, 5, 12, 28, 38) y lista de mapas/modos comprobados en abibuilder.com/merchant; el resto lo pega el usuario con "Importar JSON" (sin scraping).
-- 2026-10-23: nombres de objetos en inglés (como en ABI Builder) y tipos de carga en español.
-- 2026-10-23: moneda de Zombie Endless desconocida → campo editable "Moneda Zombie" y % 100 por defecto, marcado "verificar en el juego".
-- 2026-10-23: probabilidades de cajas misteriosas no públicas → el valor esperado usa pesos que pone el usuario (por defecto 1) y avisa de que es una apuesta.
-- 2026-10-23: huella de sonido = forma del espectro en 24 bandas log (z-score, no depende del volumen) 70 % + nº de golpes 15 % + duración 15 %.
-- 2026-10-23: audios subidos en IndexedDB (para poder usarlos desde el móvil sin tocar el repo).
+- 2026-10-24: la calculadora de la furgoneta va primero (petición del usuario): escenario + qué comprar + vender en el apartado 01; el sonido pasa al 02.
+- 2026-10-24: datos, sonidos e imágenes tomados de abi-sound-calculate-items.cayetanomoron2000.workers.dev (seed.js con tablas v1.0.0.151.10) e hexaov91/abi-assets, con permiso del usuario. Comprobado que los 38 sonidos coinciden con los de abibuilder.com/merchant (mismo archivo «…_Up» por ID).
+- 2026-10-24: solo el sonido al coger (el usuario no quiere «al soltar») y fuera la sección de subir audios propios y el «Importar JSON».
+- 2026-10-24: todo en español con traducciones propias de los 189 objetos; el nombre original se muestra pequeño y la búsqueda acepta los dos.
+- 2026-10-24: a todo el ancho (sin max-width), margen lateral `--margen: clamp(16px, 2.5vw, 40px)`.
+- 2026-10-24: analizador sin calibración manual: compara contra huellas de los 38 .ogg calculadas en el navegador (FFT propia, 24 bandas log, 70 % forma del espectro + 15 % golpes + 15 % duración). Autoprueba: 38/38.
+- 2026-10-23: moneda de Zombis sin fin desconocida → campo editable y % 100 por defecto, marcado «verificar en el juego».
 - 2026-10-23: Pages `arena-abi` creado con `wrangler pages project create --force` (solo la primera vez).
 
 ## Patrones reutilizables
 
 - **almacen.leer/guardar**: localStorage en try/catch con valor por defecto. En `index.html`.
-- **validarDatos(json)**: normaliza y descarta entradas no válidas de la tabla de sonidos. En `index.html`.
-- **marcador(it)**: SVG con la rejilla del tamaño real del objeto e iniciales en color de rareza, cuando no hay imagen. En `index.html`.
+- **distribucion(perfil, tipo, precio)**: probabilidad de cada objeto mezclando repartos por peso. En `index.html`.
+- **fft / huellaDeBuffer / parecido**: huella acústica sin librerías para comparar audios. En `index.html`.
 - **pitar(frec, dur, veces)**: pitidos con Web Audio sin archivos. En `index.html`.
-- **calcularHuella / parecido**: huella acústica simple con AnalyserNode. En `index.html`.
+- **generar-datos.mjs**: patrón «fuente de terceros + traducciones → bloque entre marcadores en el HTML».
 
 ## Relacionado
 
@@ -58,4 +63,4 @@ Sin `eventos` = el objeto suena igual al coger y al soltar. Sin `mapas` = aparec
 
 ## Última actualización
 
-2026-10-23
+2026-10-24
