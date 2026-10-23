@@ -1,0 +1,6 @@
+node_modules/
+dist/
+# Copias generadas por scripts/preparar.mjs
+app/datos.js
+app/audio/
+app/img/

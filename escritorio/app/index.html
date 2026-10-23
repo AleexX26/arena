@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self' blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oído de la furgoneta</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<header class="cabecera">
+  <div>
+    <h1>Oído de la furgoneta</h1>
+    <p class="sub">Arena Breakout: Infinite · de fans</p>
+  </div>
+  <span class="estado" id="estado" role="status">Parado</span>
+</header>
+
+<main>
+  <div class="fila">
+    <button class="primario grande" id="btnEscuchar" aria-pressed="false">▶ Empezar a escuchar</button>
+    <label class="check"><input type="checkbox" id="siempreEncima" checked> Siempre encima</label>
+    <label class="check"><input type="checkbox" id="voz" checked> Decirlo en voz alta</label>
+  </div>
+  <label class="campo"><span>De dónde escuchar</span><select id="fuente"></select></label>
+  <div class="nivel" aria-hidden="true"><div id="nivelBarra"></div></div>
+  <p class="nota" id="mensaje" aria-live="polite">Pulsa «Empezar a escuchar» y juega: cuando cojas un objeto de la furgoneta, aquí verás qué es.</p>
+
+  <!-- Escenario -->
+  <section class="tarjeta" aria-labelledby="t-carga">
+    <h2 id="t-carga">Mi carga</h2>
+    <div class="campos">
+      <label class="campo ancho"><span>Mapa y modo</span><select id="eMapa"></select></label>
+      <label class="campo"><span>Tipo de carga</span><select id="eTipo"></select></label>
+      <label class="campo"><span>Precio</span><select id="ePrecio"></select></label>
+    </div>
+    <div class="campo"><span id="t-tamano">Tamaño del objeto</span>
+      <div class="formatos" id="eFormato" role="group" aria-labelledby="t-tamano"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="eRotar" checked> Permitir rotación (1x2 = 2x1)</label>
+    <p class="nota" id="resumenCarga"></p>
+  </section>
+
+  <!-- Resultado -->
+  <section class="tarjeta resultado" id="resultado" aria-live="polite" aria-labelledby="t-resultado">
+    <h2 id="t-resultado" class="visualmente-oculto">Resultado</h2>
+    <div id="contenidoResultado"></div>
+  </section>
+
+  <!-- Manual -->
+  <details class="tarjeta" id="manual">
+    <summary>Elegir el sonido a mano</summary>
+    <p class="nota">▶ reproduce el sonido (también sirve para probar la detección). Pulsa el número para ver sus candidatos.</p>
+    <div class="rejilla" id="rejillaManual"></div>
+  </details>
+
+  <!-- Historial -->
+  <section class="tarjeta" aria-labelledby="t-hist">
+    <h2 id="t-hist">Últimas detecciones</h2>
+    <ol class="historial" id="historial"></ol>
+  </section>
+
+  <!-- Ajustes -->
+  <details class="tarjeta">
+    <summary>Ajustes</summary>
+    <label class="campo"><span>Exigencia <output id="umbralTexto">60 %</output></span>
+      <input type="range" id="umbral" min="40" max="90" value="60">
+    </label>
+    <p class="nota">Más alto = menos avisos falsos pero puede no reconocer el sonido si hay mucho ruido.</p>
+    <label class="check"><input type="checkbox" id="soloPosibles" checked> Solo sonidos posibles en mi carga</label>
+    <label class="campo"><span>Volumen de ▶ <output id="volTexto">80 %</output></span>
+      <input type="range" id="volumen" min="0" max="100" value="80">
+    </label>
+  </details>
+
+  <p class="nota pie">Solo escucha el audio del ordenador, no toca el juego. Las probabilidades salen de las tablas de reparto del juego (v<span id="version"></span>) y pueden cambiar con los parches: verificar en el juego.</p>
+</main>
+
+<script src="datos.js"></script>
+<script src="detector.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

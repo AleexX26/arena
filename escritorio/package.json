@@ -1,0 +1,42 @@
+{
+  "name": "oido-furgoneta",
+  "productName": "Oído de la furgoneta",
+  "version": "1.0.0",
+  "description": "Escucha el audio del juego y te dice qué objeto te ha dado la furgoneta de Arena Breakout: Infinite (proyecto de fans, no oficial).",
+  "main": "main.js",
+  "private": true,
+  "author": "AleexX26",
+  "scripts": {
+    "preparar": "node scripts/preparar.mjs",
+    "start": "npm run preparar && electron .",
+    "autoprueba": "npm run preparar && electron . --autoprueba",
+    "dist": "npm run preparar && electron-builder --win portable",
+    "prueba-bucle": "npm run preparar && electron . --prueba-bucle"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.aleexx26.oidofurgoneta",
+    "productName": "Oído de la furgoneta",
+    "asar": false,
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json",
+      "captura.ps1"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "OidoFurgoneta.exe"
+    }
+  }
+}
