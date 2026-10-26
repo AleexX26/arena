@@ -4,3 +4,4 @@ dist/
 app/datos.js
 app/audio/
 app/img/
+*.raw

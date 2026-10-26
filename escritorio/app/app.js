@@ -340,8 +340,8 @@ function decir(s) {
   if (vozEs) u.voice = vozEs;
   u.rate = 1.1;
   // Mientras habla no se avisa de nada nuevo si la voz puede colarse en lo que se capta (no pasa con la salida del juego)
-  const fuente = $('#fuente').value;
-  const seCuela = !(fuente.startsWith('salida:') && JUEGO.test(fuente));
+  // La voz suena por la salida predeterminada de Windows
+  const seCuela = !audio.dispositivo || audio.dispositivo === audio.predeterminada;
   if (seCuela) {
     audio.callarHasta = Date.now() + 15000;
     u.onend = u.onerror = () => { audio.callarHasta = Date.now() + 300; };
@@ -355,8 +355,8 @@ async function sonar(n, porLaSalidaEscuchada = false) {
   const a = reproductor.audio;
   a.pause();
   let destino = '';
-  if (porLaSalidaEscuchada && $('#fuente').value.startsWith('salida:')) {
-    const nombre = $('#fuente').value.slice(7);
+  const nombre = audio.dispositivo || ($('#fuente').value.startsWith('salida:') ? $('#fuente').value.slice(7) : '');
+  if (porLaSalidaEscuchada && nombre) {
     try { destino = (await navigator.mediaDevices.enumerateDevices()).find(d => d.kind === 'audiooutput' && (d.label === nombre || d.label.startsWith(nombre)))?.deviceId || ''; } catch { /* sin dispositivos */ }
   }
   try { await a.setSinkId(destino); } catch { /* se queda en la salida actual */ }
@@ -415,32 +415,51 @@ function actualizarPermitidos() {
 const MEZCLA = /stream|mezcla est[eé]reo|stereo mix|what u hear|cable output|loopback/i;
 const SIN_PROCESAR = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
 
-/** Salidas de Windows (se capturan con captura.ps1) y entradas de audio. Por defecto, la salida del juego. */
-const JUEGO = /sonar - gaming|gaming|juego/i;
+/** Salidas de Windows: { predeterminada, juego (por la que suena UAGame.exe, o ''), salidas }. */
+async function salidasWindows() {
+  try { return (await window.escritorio?.capturaSistema.salidas()) || { predeterminada: '', juego: '', salidas: [] }; } catch { return { predeterminada: '', juego: '', salidas: [] }; }
+}
+const corto = n => n.replace(/\s*\((SteelSeries Sonar Virtual Audio Device|NVIDIA High Definition Audio)\)/, '');
+
+/** Por defecto «juego»: escucha la salida por la que suena el juego (Sonar lo puede mandar a Gaming, Media…). */
 async function rellenarFuentes() {
   const sel = $('#fuente');
-  let entradas = [], salidas = { predeterminada: '', salidas: [] };
+  let entradas = [];
   try { entradas = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput' && d.deviceId !== 'default' && d.deviceId !== 'communications'); } catch { /* sin dispositivos */ }
-  try { salidas = (await window.escritorio?.capturaSistema.salidas()) || salidas; } catch { /* sin captura propia */ }
+  const salidas = await salidasWindows();
   const opcionesSalida = salidas.salidas.map(n => {
-    const extra = JUEGO.test(n) ? ' (juego, recomendada)' : n === salidas.predeterminada ? ' (predeterminada)' : '';
-    return `<option value="salida:${esc(n)}">🔊 ${esc(n)}${extra}</option>`;
+    const extra = n === salidas.juego ? ' (aquí suena el juego)' : n === salidas.predeterminada ? ' (predeterminada)' : '';
+    return `<option value="salida:${esc(n)}">🔊 ${esc(corto(n))}${extra}</option>`;
   }).join('');
-  sel.innerHTML = '<option value="sistema">🔊 Salida predeterminada de Windows</option>' +
+  const auto = window.escritorio ? `<option value="juego">🎮 Automático: donde suene el juego${salidas.juego ? ` (ahora ${esc(corto(salidas.juego))})` : ' (abre el juego)'}</option>` : '';
+  sel.innerHTML = auto + '<option value="sistema">🔊 Salida predeterminada de Windows</option>' +
     (opcionesSalida ? `<optgroup label="Salidas (lo que suena)">${opcionesSalida}</optgroup>` : '') +
     (entradas.length ? `<optgroup label="Entradas">${entradas.map(d => `<option value="${esc(d.deviceId)}">🎙 ${esc(d.label || 'Entrada sin nombre')}</option>`).join('')}</optgroup>` : '');
   const valores = [...sel.options].map(o => o.value);
-  const guardada = almacen.leer('fuente', null);
-  const juego = salidas.salidas.find(n => JUEGO.test(n));
-  sel.value = guardada && valores.includes(guardada) ? guardada : juego ? 'salida:' + juego : 'sistema';
+  const guardada = almacen.leer('fuente2', null);
+  sel.value = guardada && valores.includes(guardada) ? guardada : auto ? 'juego' : 'sistema';
   return entradas;
 }
+
+/** Con «Automático», cada 20 s mira si el juego ha cambiado de salida y, si es así, se pasa a la nueva. */
+async function vigilarJuego() {
+  // Solo si lleva un rato sin llegar nada (mirar las salidas tarda y no hace falta mientras suena el juego)
+  if (!audio.activo || $('#fuente').value !== 'juego' || Date.now() - (audio.ultimoSonido || 0) < 15000) return;
+  const { juego } = await salidasWindows();
+  if (juego && juego !== audio.dispositivo && audio.activo) {
+    parar();
+    await empezar();
+    mensaje(`El juego ahora suena por «${corto(juego)}»: escuchando ahí.`);
+  }
+}
+setInterval(vigilarJuego, 20000);
 
 /** Pasa un trozo de audio al detector y pinta el nivel. */
 function procesar(trozo) {
   if (!audio.escucha) return;
   let pico = 0; for (const v of trozo) { const x = Math.abs(v); if (x > pico) pico = x; }
   audio.pico = Math.max(audio.pico || 0, pico);
+  if (pico > 0.001) audio.ultimoSonido = Date.now();
   if (audio.grabacion) audio.grabacion.push(Float32Array.from(trozo));
   const detecciones = audio.escucha.alimentar(trozo);
   $('#nivelBarra').style.width = Math.max(0, Math.min(100, (audio.escucha.volumen + 70) / 70 * 100)) + '%';
@@ -459,6 +478,9 @@ async function abrirSistemaNativo(dispositivo = '') {
   const cap = window.escritorio?.capturaSistema;
   if (!cap) throw new Error('captura propia no disponible');
   const { frecuencia } = await cap.iniciar(dispositivo);
+  const { predeterminada, salidas } = await salidasWindows();
+  audio.predeterminada = predeterminada;
+  audio.dispositivo = (dispositivo && salidas.find(n => n.toLowerCase().includes(dispositivo.toLowerCase()))) || predeterminada;
   await crearEscucha(frecuencia);
   cap.alRecibir(bytes => procesar(bytes.byteOffset % 4 === 0
     ? new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
@@ -493,7 +515,12 @@ async function empezar() {
   try {
     btn.disabled = true;
     mensaje('Conectando con el audio…');
-    if (sel.value.startsWith('salida:')) {
+    if (sel.value === 'juego') {
+      const { juego } = await salidasWindows();
+      await abrirSistemaNativo(juego);
+      if (!juego) tostadaFuente = 'No encuentro el juego abierto: escuchando la salida predeterminada. Ábrelo y vuelve a pulsar «Empezar».';
+      else tostadaFuente = `Escuchando el juego por «${corto(juego)}». Coge un objeto y saldrá aquí.`;
+    } else if (sel.value.startsWith('salida:')) {
       await abrirSistemaNativo(sel.value.slice(7));
     } else if (sel.value === 'sistema') {
       try { await abrirSistemaNativo(); } catch (errNativo) {
@@ -524,6 +551,7 @@ async function empezar() {
 function parar() {
   if (audio.nativo) window.escritorio?.capturaSistema.parar();
   audio.nativo = false;
+  audio.dispositivo = '';
   audio.activo = false;
   audio.stream?.getTracks().forEach(t => t.stop());
   audio.stream = null;
@@ -564,7 +592,7 @@ function iniciarAjustes() {
   $('#btnEscuchar').addEventListener('click', () => (audio.activo ? parar() : empezar()));
   rellenarFuentes();
   $('#fuente').addEventListener('change', e => {
-    almacen.guardar('fuente', e.target.value);
+    almacen.guardar('fuente2', e.target.value);
     if (audio.activo) { parar(); empezar(); }
   });
   navigator.mediaDevices.addEventListener?.('devicechange', rellenarFuentes);
@@ -622,15 +650,23 @@ window.autoprueba = autoprueba;
 async function pruebaBucle(lista = [1, 4, 12, 28, 33, 38], salida = null) {
   $('#voz').checked = false;
   const espera = ms => new Promise(r => setTimeout(r, ms));
-  // Opcional: reproducir por una salida concreta (p. ej. /Sonar - Gaming/) para probar una mezcla
-  if (salida) {
+  // Opcional: reproducir por una salida concreta (p. ej. /Sonar - Gaming/) o por la del juego ('juego')
+  if (salida === 'juego') {
+    await rellenarFuentes();
+    $('#fuente').value = 'juego';
+    await empezar();
+    if (!audio.activo) return { error: $('#mensaje').textContent };
+    salida = null;
+  } else if (salida) {
     const disp = (await navigator.mediaDevices.enumerateDevices()).find(d => d.kind === 'audiooutput' && salida.test(d.label));
     if (disp) await reproductor.audio.setSinkId(disp.deviceId);
   }
-  await rellenarFuentes();
+  if (!audio.activo) await rellenarFuentes();
   const opcion = salida && [...$('#fuente').options].find(o => o.value.startsWith('salida:') && salida.test(o.value));
-  $('#fuente').value = opcion ? opcion.value : 'sistema';
-  await empezar();
+  if (!audio.activo) {
+    $('#fuente').value = opcion ? opcion.value : 'sistema';
+    await empezar();
+  }
   if (!audio.activo) return { error: $('#mensaje').textContent };
   audio.escucha.permitidos = null;
   await espera(1500);
@@ -647,6 +683,21 @@ async function pruebaBucle(lista = [1, 4, 12, 28, 33, 38], salida = null) {
   return resultados;
 }
 window.pruebaBucle = pruebaBucle;
+
+/** Diagnóstico (--analizar=<archivo.raw> en app/): pasa una grabación de captura.ps1 por el detector y lista cada ataque. */
+async function analizarGrabacion(nombre, umbral = 0.6) {
+  const b = await fetch(nombre).then(r => r.arrayBuffer());
+  const sr = new DataView(b).getInt32(0, true);
+  const muestras = new Float32Array(b.slice(4, 4 + Math.floor((b.byteLength - 4) / 4) * 4));
+  const escucha = new Detector.Escucha(sr, await cargarPlantillas(sr), { umbral });
+  const evaluaciones = [];
+  const evaluar = escucha.evaluar.bind(escucha);
+  escucha.evaluar = ataque => { const r = evaluar(ataque); if (r) evaluaciones.push(`${(ataque / 100).toFixed(2)} s: #${r.id} ${Math.round(r.parecido * 100)} % (destaque ${Math.round(r.destaque * 100)}) · luego ${r.alternativas.map(a => `#${a.id} ${Math.round(a.parecido * 100)}`).join(', ')}`); return r; };
+  const avisos = [];
+  for (let i = 0; i < muestras.length; i += 4800) escucha.alimentar(muestras.subarray(i, i + 4800)).forEach(d => avisos.push(`${(d.ataque / 100).toFixed(2)} s → #${d.id} ${Math.round(d.parecido * 100)} %${d.dudoso ? ' (dudoso)' : ''}`));
+  return { sr, segundos: (muestras.length / sr).toFixed(1), avisos, evaluaciones };
+}
+window.analizarGrabacion = analizarGrabacion;
 
 /* ---------- arranque ---------- */
 $('#version').textContent = DATOS.version;

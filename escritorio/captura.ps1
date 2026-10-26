@@ -1,6 +1,6 @@
 # Captura "loopback" de una salida de audio de Windows (WASAPI, modo compartido).
 # Usa el formato propio del dispositivo, así funciona con cualquier frecuencia (44,1 / 48 / 96 kHz…).
-#   -Listar               escribe en JSON las salidas activas y la predeterminada
+#   -Listar               escribe en JSON las salidas activas, la predeterminada y por cuál suena el juego
 #   -Dispositivo "texto"  captura la salida cuyo nombre contenga ese texto (si no, la predeterminada)
 # Salida al capturar: 4 bytes con la frecuencia (int32) y después muestras float32 mono sin fin.
 # Solo escucha lo que suena; no toca ningún otro programa.
@@ -47,6 +47,29 @@ interface IPropertyStore {
   void GetCount(out uint total);
   void GetAt(uint indice, out ClavePropiedad clave);
   void GetValue(ref ClavePropiedad clave, out ValorPropiedad valor);
+}
+
+// Sesiones de audio de cada salida: para saber por cuál suena el juego (Sonar puede mandarlo a Gaming, Media…)
+[Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IAudioSessionManager2 {
+  void GetAudioSessionControl(IntPtr a, int b, IntPtr c);
+  void GetSimpleAudioVolume(IntPtr a, int b, IntPtr c);
+  void GetSessionEnumerator(out IAudioSessionEnumerator sesiones);
+}
+
+[Guid("E2F5BB11-0570-40CA-ACDD-3AA01277DEE8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IAudioSessionEnumerator {
+  void GetCount(out int total);
+  void GetSession(int indice, out IAudioSessionControl2 sesion);
+}
+
+[Guid("bfb7ff88-7239-4fc9-8fa2-07c950be9c6d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IAudioSessionControl2 {
+  void GetState(out int estado);
+  void m1(); void m2(); void m3(); void m4(); void m5(); void m6(); void m7(); void m8();
+  void GetSessionIdentifier(out IntPtr id);
+  void GetSessionInstanceIdentifier(out IntPtr id);
+  void GetProcessId(out uint pid);
 }
 
 [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -101,10 +124,36 @@ public static class CapturaBucle {
     return d;
   }
 
+  /** Salida por la que suena el juego: mejor la que tiene su sesión activa (sonando) que solo abierta; "" si no está. */
+  static string SalidaDelJuego() {
+    string abierta = "";
+    foreach (KeyValuePair<string, IMMDevice> par in Salidas()) {
+      try {
+        Guid iid = typeof(IAudioSessionManager2).GUID;
+        object o;
+        par.Value.Activate(ref iid, 23, IntPtr.Zero, out o);
+        IAudioSessionEnumerator sesiones;
+        ((IAudioSessionManager2)o).GetSessionEnumerator(out sesiones);
+        int n; sesiones.GetCount(out n);
+        for (int i = 0; i < n; i++) {
+          IAudioSessionControl2 s; sesiones.GetSession(i, out s);
+          uint pid; s.GetProcessId(out pid);
+          string proceso = "";
+          try { proceso = System.Diagnostics.Process.GetProcessById((int)pid).ProcessName; } catch { }
+          if (!proceso.Equals("UAGame", StringComparison.OrdinalIgnoreCase) && proceso.IndexOf("arena_breakout", StringComparison.OrdinalIgnoreCase) < 0) continue;
+          int estado; s.GetState(out estado);
+          if (estado == 1) return par.Key;                                // AudioSessionStateActive
+          if (abierta == "") abierta = par.Key;
+        }
+      } catch { }
+    }
+    return abierta;
+  }
+
   static string Json(string s) { return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""; }
 
   public static void Listar() {
-    StringBuilder sb = new StringBuilder("{\"predeterminada\":" + Json(Nombre(Predeterminada())) + ",\"salidas\":[");
+    StringBuilder sb = new StringBuilder("{\"predeterminada\":" + Json(Nombre(Predeterminada())) + ",\"juego\":" + Json(SalidaDelJuego()) + ",\"salidas\":[");
     List<KeyValuePair<string, IMMDevice>> lista = Salidas();
     for (int i = 0; i < lista.Count; i++) sb.Append((i > 0 ? "," : "") + Json(lista[i].Key));
     sb.Append("]}");

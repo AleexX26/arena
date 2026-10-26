@@ -1475,7 +1475,7 @@ const Detector = (() => {
       if (!mejor) return null;
       // La cola o el eco de un sonido ya avisado no cuenta como otro objeto
       const ultimo = this.ultimoAviso;
-      if (ultimo && mejor.ataque - ultimo.ataque < 150 && mejor.parecido < ultimo.parecido) return null;
+      if (ultimo && mejor.ataque - ultimo.ataque < 150 && mejor.parecido <= ultimo.parecido) return null;
       const valido = mejor.parecido >= this.umbral && mejor.destaque >= this.umbral * 0.4;
       if (valido) { this.ultimoAviso = mejor; return { ...mejor, cuando: Date.now() }; }
       // Casi: se informa como dudoso (la interfaz lo enseña aparte, sin darlo por bueno)

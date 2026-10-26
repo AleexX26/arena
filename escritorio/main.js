@@ -6,7 +6,9 @@ const { spawn } = require('node:child_process');
 
 const CARPETA_APP = path.join(__dirname, 'app');
 // Pruebas sin ventana: --autoprueba (detector con audio sintético) y --prueba-bucle (altavoces → captura)
-const PRUEBA = ['--autoprueba', '--prueba-bucle'].find(a => process.argv.includes(a));
+// --analizar=<archivo en app/>: pasa una grabación por el detector
+const ANALIZAR = process.argv.find(a => a.startsWith('--analizar='))?.slice(11);
+const PRUEBA = ANALIZAR ? '--autoprueba' : ['--autoprueba', '--prueba-bucle'].find(a => process.argv.includes(a));
 const AUTOPRUEBA = Boolean(PRUEBA);
 
 // app:// sirve los archivos de app/ como origen seguro (fetch, AudioWorklet y getDisplayMedia lo necesitan)
@@ -107,7 +109,7 @@ app.whenReady().then(() => {
     ventana.webContents.once('did-finish-load', async () => {
       try {
         // true = cuenta como gesto del usuario (getDisplayMedia lo exige)
-        const resultado = await ventana.webContents.executeJavaScript(PRUEBA === '--autoprueba' ? 'autoprueba()' : 'pruebaBucle([1, 12, 28], /Sonar - Gaming/)', true);
+        const resultado = await ventana.webContents.executeJavaScript(ANALIZAR ? `analizarGrabacion(${JSON.stringify(ANALIZAR)})` : PRUEBA === '--autoprueba' ? 'autoprueba()' : "pruebaBucle([1, 12, 28, 33], 'juego')", true);
         console.log(JSON.stringify(resultado, null, 2));
         // --foto=<ruta.png>: guarda una captura de la ventana (para revisar el diseño)
         const foto = process.argv.find(x => x.startsWith('--foto='));
