@@ -7,7 +7,7 @@ const NUM_SONIDOS = 38;
 const RAREZAS = ['', 'Común', 'Poco común', 'Raro', 'Épico', 'Legendario', 'Mítico'];
 const MITICO = 6; // "rojo"
 const ESCENARIO_INICIAL = { mapa: 'Estación de TV · Confinamiento', tipo: 100022, precio: 70000 };
-const MAX_HISTORIAL = 8;
+const MAX_HISTORIAL = 10;
 const TAMANOS = ['1x1', '1x2', '2x1', '2x2', '2x3', '3x2'];
 
 /* ---------- utilidades ---------- */
@@ -100,19 +100,20 @@ function pintarFormatos() {
     `<button type="button" data-formato="${t}" aria-pressed="${escenario.formato === t}">${t || 'Todos'}</button>`).join('');
 }
 
+/** Siempre se listan los 19 tipos y los 19 precios; los que no salen en el mapa van marcados. */
+const TIPOS_TODOS = Object.keys(DATOS.tipos).map(Number).sort((a, b) => a - b);
+const PRECIOS_TODOS = [...new Set(REPARTOS.map(r => r.precio))].sort((a, b) => a - b);
+
 function rellenarTipos() {
-  const tipos = [...new Set(repartosDe({ perfil: perfilActual() }).map(r => r.tipo))].sort((a, b) => nombreTipo(a).localeCompare(nombreTipo(b), 'es'));
-  if (escenario.tipo && !tipos.includes(escenario.tipo)) escenario.tipo = tipos.includes(100022) ? 100022 : 0;
-  $('#eTipo').innerHTML = '<option value="0">Cualquiera</option>' + tipos.map(t => `<option value="${t}">${esc(nombreTipo(t))}</option>`).join('');
+  const aqui = new Set(repartosDe({ perfil: perfilActual() }).map(r => r.tipo));
+  $('#eTipo').innerHTML = '<option value="0">Cualquiera</option>' + TIPOS_TODOS.map(t => `<option value="${t}">${esc(nombreTipo(t))}${aqui.has(t) ? '' : ' · no sale aquí'}</option>`).join('');
   $('#eTipo').value = String(escenario.tipo);
   rellenarPrecios();
 }
 function rellenarPrecios() {
-  const precios = escenario.tipo ? [...new Set(repartosDe({ perfil: perfilActual(), tipo: escenario.tipo }).map(r => r.precio))].sort((a, b) => a - b) : [];
-  if (!precios.includes(escenario.precio)) escenario.precio = precios[0] ?? 0;
-  $('#ePrecio').innerHTML = precios.length ? precios.map(p => `<option value="${p}">${fmt(p)}</option>`).join('') : '<option value="0">—</option>';
+  const aqui = new Set(repartosDe({ perfil: perfilActual(), tipo: escenario.tipo || null }).map(r => r.precio));
+  $('#ePrecio').innerHTML = '<option value="0">Cualquiera</option>' + PRECIOS_TODOS.map(p => `<option value="${p}">${fmt(p)}${aqui.has(p) ? '' : ' · no sale'}</option>`).join('');
   $('#ePrecio').value = String(escenario.precio);
-  $('#ePrecio').disabled = !precios.length;
 }
 
 function resumenCarga() {
@@ -133,6 +134,8 @@ function escenarioCambiado() {
   actualizarPermitidos();
   pintarManual();
   pintarResultado();
+  pintarTop();
+  pintarHistorial();
 }
 
 function iniciarEscenario() {
@@ -167,6 +170,7 @@ function pintarResultado(nuevo = false) {
   const caja = $('#contenidoResultado');
   const det = estado.deteccion;
   if (!det) {
+    $('#tituloResultado').textContent = 'Objetos posibles';
     caja.innerHTML = '<p class="esperando">Esperando un sonido… Coge un objeto de la furgoneta o de la caja.</p>';
     return;
   }
@@ -179,6 +183,7 @@ function pintarResultado(nuevo = false) {
   const masa = dist && !fuera ? cands.reduce((t, o) => t + (dist.get(o.id) || 0), 0) : 0;
   const prob = o => (masa ? (dist.get(o.id) || 0) / masa : null);
   cands = [...cands].sort((a, b) => (prob(b) ?? 0) - (prob(a) ?? 0) || b.mercado - a.mercado);
+  $('#tituloResultado').textContent = `Objetos posibles con el sonido #${s} (${cands.length})`;
 
   const rojos = cands.filter(o => o.rareza === MITICO);
   let rojoHtml;
@@ -239,22 +244,68 @@ setInterval(actualizarHace, 1000);
 
 function mostrarDeteccion(det) {
   estado.registro?.push(det); // solo durante las pruebas
-  estado.historial.unshift(det);
-  estado.historial = estado.historial.slice(0, MAX_HISTORIAL);
-  pintarHistorial();
+  if (!det.manual) {
+    estado.historial.unshift(det);
+    estado.historial = estado.historial.slice(0, MAX_HISTORIAL);
+    pintarHistorial();
+  }
   // Las dudosas solo van al historial: no cambian el resultado ni se dicen en voz alta
-  if (det.dudoso) return;
+  if (det.dudoso) { mensaje(`Quizá el sonido ${det.id} (${Math.round(det.parecido * 100)} %), pero no está claro.`); return; }
   estado.deteccion = det;
+  if (!det.manual) {
+    estado.ultima = det;
+    pintarTop();
+    mensaje(`Detectado: sonido ${det.id} (${Math.round(det.parecido * 100)} % de similitud).`);
+  }
   pintarResultado(true);
   if (!det.manual) decir(det.id);
+}
+
+/** Objetos de un sonido con la carga y el tamaño elegidos (o todos los de ese sonido si ninguno encaja). */
+function objetosDeSonido(s) {
+  const { dist, lista } = posibles();
+  let objs = lista.filter(o => o.sonido === s);
+  const fuera = !objs.length;
+  if (fuera) objs = OBJETOS.filter(o => o.sonido === s);
+  const masa = dist && !fuera ? objs.reduce((t, o) => t + (dist.get(o.id) || 0), 0) : 0;
+  const prob = o => (masa ? (dist.get(o.id) || 0) / masa : null);
+  objs = [...objs].sort((a, b) => (prob(b) ?? 0) - (prob(a) ?? 0) || b.mercado - a.mercado);
+  return { objs, prob, fuera, masa };
+}
+
+function miniaturas(objs, max) {
+  const resto = objs.length - max;
+  return objs.slice(0, resto > 0 ? max - 1 : max).map(o => `<span class="miniatura" style="--rc: var(--r${o.rareza})" title="${esc(o.nombre)} · ${fmtCorto(o.mercado)}"><img src="img/${esc(o.id)}.png" alt="${esc(o.nombre)}"></span>`).join('')
+    + (resto > 0 ? `<span class="mas">+${resto + 1}</span>` : '');
+}
+
+/** Las 3 mejores coincidencias de la última detección. */
+function pintarTop() {
+  const d = estado.ultima;
+  if (!d) { $('#detTop').innerHTML = '<p class="vacio" style="grid-column:1/-1">Aún no se ha detectado nada.</p>'; return; }
+  const filas = [{ id: d.id, parecido: d.parecido }, ...(d.alternativas || []).slice(0, 2)];
+  $('#detTop').innerHTML = filas.map((f, i) => {
+    const { objs, prob, fuera, masa } = objetosDeSonido(f.id);
+    const rojo = masa ? objs.filter(o => o.rareza === MITICO).reduce((t, o) => t + prob(o), 0) : null;
+    const info = i === 0 ? `<span class="info">${objs.length === 1 ? '✓ Es' : 'Lo más probable'}: <strong>${esc(objs[0].nombre)}</strong>${prob(objs[0]) !== null && objs.length > 1 ? ` (${pct(prob(objs[0]))})` : ''} · ${fmtCorto(objs[0].mercado)}${rojo !== null ? ` · rojo ${pct(rojo)}` : ''}${fuera ? ' · <span class="negativo">no encaja con tu carga</span>' : ''}</span>` : '';
+    return `<button class="det-carta${i === 0 ? ' primera' : ''}" data-elegir="${f.id}" aria-label="Ver el sonido ${f.id}, ${Math.round(f.parecido * 100)} % de similitud">
+      <span class="cab"><b>Sonido #${f.id}</b><span>${Math.round(f.parecido * 100)} % similitud</span></span>
+      <span class="barra"><div style="width:${Math.round(f.parecido * 100)}%"></div></span>
+      <span class="minis">${miniaturas(objs, 5)}</span>
+      ${info}
+    </button>`;
+  }).join('');
 }
 
 function pintarHistorial() {
   $('#historial').innerHTML = estado.historial.length ? estado.historial.map(d => {
     const h = new Date(d.cuando).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const que = d.manual ? 'a mano' : `${Math.round(d.parecido * 100)} %${d.dudoso ? ' · dudoso' : ''}`;
-    return `<li class="${d.dudoso ? 'dudoso' : ''}"><span><button data-elegir="${d.id}">#${d.id}</button> ${que}</span><span class="mono">${h}</span></li>`;
-  }).join('') : '<li>Nada todavía.</li>';
+    return `<li class="${d.dudoso ? 'dudosa' : ''}">
+      <span class="hora">${h}</span><strong>Sonido #${d.id}</strong><span class="pc">${Math.round(d.parecido * 100)} %${d.dudoso ? ' ?' : ''}</span>
+      <span class="minis">${miniaturas(objetosDeSonido(d.id).objs, 5)}</span>
+      <button class="pequeno" data-elegir="${d.id}">Usar</button>
+    </li>`;
+  }).join('') : '<li style="display:block;border:0"><p class="vacio">Vacío.</p></li>';
 }
 
 /* ---------- aviso por voz ---------- */
@@ -300,9 +351,16 @@ function decir(s) {
 
 /* ---------- elegir a mano y reproducir ---------- */
 const reproductor = { audio: new Audio(), volumen: almacen.leer('volumen', 80) };
-function sonar(n) {
+async function sonar(n, porLaSalidaEscuchada = false) {
   const a = reproductor.audio;
-  a.pause(); a.src = `audio/${n}.ogg`; a.volume = reproductor.volumen / 100;
+  a.pause();
+  let destino = '';
+  if (porLaSalidaEscuchada && $('#fuente').value.startsWith('salida:')) {
+    const nombre = $('#fuente').value.slice(7);
+    try { destino = (await navigator.mediaDevices.enumerateDevices()).find(d => d.kind === 'audiooutput' && (d.label === nombre || d.label.startsWith(nombre)))?.deviceId || ''; } catch { /* sin dispositivos */ }
+  }
+  try { await a.setSinkId(destino); } catch { /* se queda en la salida actual */ }
+  a.src = `audio/${n}.ogg`; a.volume = reproductor.volumen / 100;
   a.play().catch(() => mensaje('No se pudo reproducir el sonido.'));
 }
 
@@ -580,7 +638,7 @@ async function pruebaBucle(lista = [1, 4, 12, 28, 33, 38], salida = null) {
   for (const s of lista) {
     estado.registro = [];
     audio.pico = 0;
-    sonar(s);
+    sonar(s, true);
     await espera(3000);
     const nuevas = estado.registro;
     resultados.push(`${s}→${nuevas.length ? nuevas.map(d => `${d.id} (${Math.round(d.parecido * 100)} %)`).join(' ') : 'nada'} · pico ${(audio.pico || 0).toFixed(3)}${audio.nativo ? ' (captura propia)' : ''}`);
@@ -597,3 +655,10 @@ iniciarAjustes();
 pintarManual();
 pintarResultado();
 pintarHistorial();
+pintarTop();
+$('#pruebaSonido').innerHTML = Array.from({ length: NUM_SONIDOS }, (_, i) => `<option value="${i + 1}">#${i + 1}</option>`).join('');
+$('#btnProbar').addEventListener('click', () => {
+  sonar(Number($('#pruebaSonido').value), true);
+  if (!audio.activo) mensaje('Suena la prueba. Empieza a escuchar para ver si la reconoce.');
+});
+$('#btnLimpiar').addEventListener('click', () => { estado.historial = []; pintarHistorial(); });

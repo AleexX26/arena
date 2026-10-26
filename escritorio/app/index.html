@@ -9,72 +9,84 @@
 </head>
 <body>
 <header class="cabecera">
-  <div>
-    <h1>Oído de la furgoneta</h1>
-    <p class="sub">Arena Breakout: Infinite · de fans</p>
+  <div class="marca-app">
+    <span class="logo" aria-hidden="true">ABI</span>
+    <div>
+      <h1>Oído de la furgoneta</h1>
+      <p class="sub">Detector de sonido · de fans</p>
+    </div>
   </div>
   <span class="estado" id="estado" role="status">Parado</span>
 </header>
 
-<main>
-  <div class="fila">
-    <button class="primario grande" id="btnEscuchar" aria-pressed="false">▶ Empezar a escuchar</button>
-    <label class="check"><input type="checkbox" id="siempreEncima" checked> Siempre encima</label>
-    <label class="check"><input type="checkbox" id="voz" checked> Decirlo en voz alta</label>
+<main class="disposicion">
+  <div class="columna">
+    <!-- Detector -->
+    <section class="tarjeta" id="detector" aria-labelledby="t-detector">
+      <h2 id="t-detector">Detector de sonido en tiempo real</h2>
+      <div class="campos">
+        <label class="campo ancho"><span>Mapa y modo</span><select id="eMapa"></select></label>
+        <label class="campo"><span>Tipo de carga</span><select id="eTipo"></select></label>
+        <label class="campo"><span>Precio de la carga</span><select id="ePrecio"></select></label>
+        <label class="campo ancho"><span>Fuente de audio</span><select id="fuente"></select></label>
+        <label class="campo"><span>Exigencia <output id="umbralTexto" class="mono">60 %</output></span>
+          <input type="range" id="umbral" min="40" max="90" value="60" aria-describedby="ayudaUmbral">
+        </label>
+        <label class="campo"><span>Probar con sonido</span><select id="pruebaSonido"></select></label>
+      </div>
+      <p class="nota" id="ayudaUmbral">Exigencia: a la derecha, menos avisos falsos; a la izquierda, reconoce más sonidos con ruido.</p>
+
+      <div class="campo" style="margin-top:10px"><span id="t-tamano">Forma / tamaño</span>
+        <div class="formatos" id="eFormato" role="group" aria-labelledby="t-tamano"></div>
+      </div>
+      <div class="fila opciones">
+        <label class="check"><input type="checkbox" id="eRotar" checked> Permitir rotación</label>
+        <label class="check"><input type="checkbox" id="soloPosibles" checked> Solo sonidos posibles</label>
+        <label class="check"><input type="checkbox" id="voz" checked> Decirlo en voz alta</label>
+        <label class="check"><input type="checkbox" id="siempreEncima" checked> Siempre encima</label>
+      </div>
+
+      <div class="fila" style="margin-top:6px">
+        <button class="primario" id="btnEscuchar" aria-pressed="false">▶ Empezar a escuchar</button>
+        <button id="btnProbar">Reproducir prueba</button>
+      </div>
+      <p class="nota" id="mensaje" aria-live="polite">Elige mapa y carga, pulsa «Empezar a escuchar» y juega.</p>
+      <div class="nivel" aria-hidden="true"><div id="nivelBarra"></div></div>
+      <p class="nota" id="resumenCarga"></p>
+
+      <h3 class="sub-det">Última detección</h3>
+      <div class="det-top" id="detTop" aria-live="polite"></div>
+
+      <div class="cab-hist">
+        <h3 class="sub-det">Historial (últimos 10)</h3>
+        <button id="btnLimpiar" class="pequeno">Limpiar</button>
+      </div>
+      <ol class="det-hist" id="historial"></ol>
+    </section>
+
+    <!-- Manual -->
+    <details class="tarjeta" id="manual">
+      <summary>Elegir el sonido a mano</summary>
+      <p class="nota">▶ reproduce el sonido. Pulsa el número para ver sus objetos.</p>
+      <div class="rejilla" id="rejillaManual"></div>
+    </details>
+
+    <!-- Ajustes -->
+    <details class="tarjeta">
+      <summary>Ajustes</summary>
+      <label class="campo"><span>Volumen de ▶ y de la prueba <output id="volTexto">80 %</output></span>
+        <input type="range" id="volumen" min="0" max="100" value="80">
+      </label>
+    </details>
   </div>
-  <label class="campo"><span>De dónde escuchar</span><select id="fuente"></select></label>
-  <div class="nivel" aria-hidden="true"><div id="nivelBarra"></div></div>
-  <p class="nota" id="mensaje" aria-live="polite">Pulsa «Empezar a escuchar» y juega: cuando cojas un objeto de la furgoneta, aquí verás qué es.</p>
 
-  <!-- Escenario -->
-  <section class="tarjeta" aria-labelledby="t-carga">
-    <h2 id="t-carga">Mi carga</h2>
-    <div class="campos">
-      <label class="campo ancho"><span>Mapa y modo</span><select id="eMapa"></select></label>
-      <label class="campo"><span>Tipo de carga</span><select id="eTipo"></select></label>
-      <label class="campo"><span>Precio</span><select id="ePrecio"></select></label>
-    </div>
-    <div class="campo"><span id="t-tamano">Tamaño del objeto</span>
-      <div class="formatos" id="eFormato" role="group" aria-labelledby="t-tamano"></div>
-    </div>
-    <label class="check"><input type="checkbox" id="eRotar" checked> Permitir rotación (1x2 = 2x1)</label>
-    <p class="nota" id="resumenCarga"></p>
-  </section>
-
-  <!-- Resultado -->
-  <section class="tarjeta resultado" id="resultado" aria-live="polite" aria-labelledby="t-resultado">
-    <h2 id="t-resultado" class="visualmente-oculto">Resultado</h2>
+  <!-- Objetos posibles -->
+  <section class="tarjeta resultado" id="resultado" aria-live="polite" aria-labelledby="tituloResultado">
+    <h2 id="tituloResultado">Objetos posibles</h2>
     <div id="contenidoResultado"></div>
   </section>
-
-  <!-- Manual -->
-  <details class="tarjeta" id="manual">
-    <summary>Elegir el sonido a mano</summary>
-    <p class="nota">▶ reproduce el sonido (también sirve para probar la detección). Pulsa el número para ver sus candidatos.</p>
-    <div class="rejilla" id="rejillaManual"></div>
-  </details>
-
-  <!-- Historial -->
-  <section class="tarjeta" aria-labelledby="t-hist">
-    <h2 id="t-hist">Últimas detecciones</h2>
-    <ol class="historial" id="historial"></ol>
-  </section>
-
-  <!-- Ajustes -->
-  <details class="tarjeta">
-    <summary>Ajustes</summary>
-    <label class="campo"><span>Exigencia <output id="umbralTexto">60 %</output></span>
-      <input type="range" id="umbral" min="40" max="90" value="60">
-    </label>
-    <p class="nota">Más alto = menos avisos falsos pero puede no reconocer el sonido si hay mucho ruido.</p>
-    <label class="check"><input type="checkbox" id="soloPosibles" checked> Solo sonidos posibles en mi carga</label>
-    <label class="campo"><span>Volumen de ▶ <output id="volTexto">80 %</output></span>
-      <input type="range" id="volumen" min="0" max="100" value="80">
-    </label>
-  </details>
-
-  <p class="nota pie">Solo escucha el audio del ordenador, no toca el juego. Las probabilidades salen de las tablas de reparto del juego (v<span id="version"></span>) y pueden cambiar con los parches: verificar en el juego.</p>
 </main>
+<p class="nota pie">Solo escucha el audio del ordenador, no toca el juego. Probabilidades de las tablas de reparto del juego (v<span id="version"></span>): verificar en el juego.</p>
 
 <script src="datos.js"></script>
 <script src="detector.js"></script>

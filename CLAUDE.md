@@ -44,6 +44,8 @@ varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según s
 
 ## Decisiones
 
+- 2026-10-26: la app de escritorio copia el diseño del detector de la web/referencia: ventana de 1040 px a dos columnas (detector con top 3 e historial con «Usar» | objetos posibles), «Probar con sonido» suena por la salida que se escucha (setSinkId) para probar de verdad, listas completas de tipo y precio. Prueba por Sonar - Gaming: 10/10. `--foto=<png>` guarda una captura en las pruebas.
+
 - 2026-10-26: detector de sonido en tiempo real en la web (como el de abi-sound-calculate-items): audio del sistema (getDisplayMedia, compartir pantalla con audio) o micrófono, AudioWorklet desde un Blob para seguir con un solo archivo, y el mismo Detector que la app de escritorio (copiado en index.html). Top 3, historial con «Usar» y aplica el sonido a Candidatos. Prueba: 9-10/10 pasando los .ogg por un MediaStream.
 - 2026-10-26: Tipo y Precio de carga listan siempre los 19 valores (marcando «no sale aquí»); nombres de carga como la web de referencia («Artículos del hogar», «Objetos militares»).
 - 2026-10-24: app de escritorio en `escritorio/` (Electron, .exe portátil): captura propia WASAPI con `captura.ps1` porque el loopback de Chromium falla con los auriculares del usuario (0x88890008); por defecto escucha «SteelSeries Sonar - Gaming» (Sonar ecualiza la mezcla de los auriculares). Prueba real: 10/10.

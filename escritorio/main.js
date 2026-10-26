@@ -16,8 +16,8 @@ protocol.registerSchemesAsPrivileged([
 
 function crearVentana() {
   const ventana = new BrowserWindow({
-    width: 470,
-    height: 820,
+    width: 1040,
+    height: 860,
     minWidth: 380,
     minHeight: 480,
     title: 'Oído de la furgoneta',
@@ -107,8 +107,11 @@ app.whenReady().then(() => {
     ventana.webContents.once('did-finish-load', async () => {
       try {
         // true = cuenta como gesto del usuario (getDisplayMedia lo exige)
-        const resultado = await ventana.webContents.executeJavaScript(PRUEBA === '--autoprueba' ? 'autoprueba()' : 'pruebaBucle([1, 4, 6, 12, 17, 22, 28, 31, 33, 38], /Sonar - Gaming/)', true);
+        const resultado = await ventana.webContents.executeJavaScript(PRUEBA === '--autoprueba' ? 'autoprueba()' : 'pruebaBucle([1, 12, 28], /Sonar - Gaming/)', true);
         console.log(JSON.stringify(resultado, null, 2));
+        // --foto=<ruta.png>: guarda una captura de la ventana (para revisar el diseño)
+        const foto = process.argv.find(x => x.startsWith('--foto='));
+        if (foto) require('node:fs').writeFileSync(foto.slice(7), (await ventana.webContents.capturePage()).toPNG());
       } catch (err) {
         console.error('Autoprueba fallida:', err);
         process.exitCode = 1;
