@@ -38,7 +38,7 @@ varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según s
 
 - Ver en local: preview `arena` de `.claude/launch.json` (puerto 8766).
 - Regenerar datos tras un parche: sustituir `datos/fuente.json` y `node scripts/generar-datos.mjs` (desde `Arena/`).
-- Desplegar: `npx wrangler pages deploy . --project-name arena-abi --branch main` (desde `Arena/`).
+- Desplegar: solo la web (`index.html`, `audio/`, `img/`), copiándola a una carpeta limpia y `npx wrangler pages deploy . --project-name arena-abi --branch main` desde ahí: desde `Arena/` falla porque entra `escritorio/` (el .exe de 100 MB y node_modules).
 - Repo: https://github.com/AleexX26/arena (rama `main`). Web: https://arena-abi.pages.dev
 - Ojo: Pages no está conectado a Git: un push NO publica, hay que repetir el `wrangler pages deploy`.
 
