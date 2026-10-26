@@ -44,6 +44,8 @@ varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según s
 
 ## Decisiones
 
+- 2026-10-26: la fuente por defecto de la app es «Automático: donde suene el juego». Sonar mandaba UAGame.exe a «Sonar - Media», no a Gaming, y la app escuchaba un canal vacío. `captura.ps1 -Listar` devuelve `juego` (la salida con la sesión de audio de UAGame activa); la app cambia de salida sola si el juego se mueve (solo lo mira tras 15 s sin sonido). La clave de localStorage pasa a `fuente2` para que nadie se quede con la elección antigua. Diagnóstico: grabar con captura.ps1 a un .raw, copiarlo a `app/` y `npx electron . --analizar=<archivo>`.
+
 - 2026-10-26: la app de escritorio copia el diseño del detector de la web/referencia: ventana de 1040 px a dos columnas (detector con top 3 e historial con «Usar» | objetos posibles), «Probar con sonido» suena por la salida que se escucha (setSinkId) para probar de verdad, listas completas de tipo y precio. Prueba por Sonar - Gaming: 10/10. `--foto=<png>` guarda una captura en las pruebas.
 
 - 2026-10-26: detector de sonido en tiempo real en la web (como el de abi-sound-calculate-items): audio del sistema (getDisplayMedia, compartir pantalla con audio) o micrófono, AudioWorklet desde un Blob para seguir con un solo archivo, y el mismo Detector que la app de escritorio (copiado en index.html). Top 3, historial con «Usar» y aplica el sonido a Candidatos. Prueba: 9-10/10 pasando los .ogg por un MediaStream.
