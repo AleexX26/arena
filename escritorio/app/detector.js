@@ -175,7 +175,8 @@ const Detector = (() => {
       const e = this.exceso(f);
       const subida = e - this.excesoAnterior;
       this.excesoAnterior = e;
-      if (f.vol > -85 && e > 5 && subida > 2.5 && k - this.ultimoAtaque > 8) {
+      // Los primeros 0,3 s solo sirven para conocer el ruido de fondo
+      if (k >= 30 && f.vol > -85 && e > 5 && subida > 2.5 && k - this.ultimoAtaque > 8) {
         this.ataques.push(k);
         this.ultimoAtaque = k;
       }

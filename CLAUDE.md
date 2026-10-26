@@ -33,6 +33,9 @@ varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según s
 
 ## Comandos
 
+- App de escritorio (desde `Arena/escritorio/`): `npm start`, `npm run autoprueba` (detector con audio sintético), `npm run prueba-bucle` (suena por Sonar - Gaming y lo capta), `npm run dist` → `dist/OidoFurgoneta.exe`. `preparar` copia datos, audio e img de la web a `app/`.
+- Si se cambia el detector, copiarlo de `escritorio/app/detector.js` al bloque `const Detector` de `index.html` (son el mismo código).
+
 - Ver en local: preview `arena` de `.claude/launch.json` (puerto 8766).
 - Regenerar datos tras un parche: sustituir `datos/fuente.json` y `node scripts/generar-datos.mjs` (desde `Arena/`).
 - Desplegar: `npx wrangler pages deploy . --project-name arena-abi --branch main` (desde `Arena/`).
@@ -40,6 +43,10 @@ varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según s
 - Ojo: Pages no está conectado a Git: un push NO publica, hay que repetir el `wrangler pages deploy`.
 
 ## Decisiones
+
+- 2026-10-26: detector de sonido en tiempo real en la web (como el de abi-sound-calculate-items): audio del sistema (getDisplayMedia, compartir pantalla con audio) o micrófono, AudioWorklet desde un Blob para seguir con un solo archivo, y el mismo Detector que la app de escritorio (copiado en index.html). Top 3, historial con «Usar» y aplica el sonido a Candidatos. Prueba: 9-10/10 pasando los .ogg por un MediaStream.
+- 2026-10-26: Tipo y Precio de carga listan siempre los 19 valores (marcando «no sale aquí»); nombres de carga como la web de referencia («Artículos del hogar», «Objetos militares»).
+- 2026-10-24: app de escritorio en `escritorio/` (Electron, .exe portátil): captura propia WASAPI con `captura.ps1` porque el loopback de Chromium falla con los auriculares del usuario (0x88890008); por defecto escucha «SteelSeries Sonar - Gaming» (Sonar ecualiza la mezcla de los auriculares). Prueba real: 10/10.
 
 - 2026-10-24: estructura de la interfaz como abibuilder.com/merchant (le gusta al usuario): filtros a la izquierda, tarjetas de sonido con miniaturas, candidatos debajo. En móvil, filtros plegados y botón flotante «Ver candidatos».
 - 2026-10-24: quitados a petición del usuario el pie (aviso y créditos), caja secreta, analizador de micro, raid y la tabla de objetos (la sustituyen los candidatos). Los créditos quedan en README.md.
@@ -65,4 +72,4 @@ varios repartos con el mismo tipo y precio: `distribucion()` los mezcla según s
 
 ## Última actualización
 
-2026-10-24
+2026-10-26
